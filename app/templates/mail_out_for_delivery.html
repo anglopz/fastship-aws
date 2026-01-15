@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Order Arriving Soon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .verification-code {
+            background-color: #f4f4f4;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 32px;
+            font-weight: bold;
+            color: #007bff;
+            letter-spacing: 4px;
+        }
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Your Order is Arriving Soon 🛵</h2>
+    <p>Our delivery executive is on their way to deliver your shipment. Please ensure you are available at the delivery location and answer the rider's incoming call.</p>
+    
+    {% if verification_code %}
+    <div class="info-box">
+        <p><strong>Important:</strong> You will need to provide the verification code below to the delivery executive to receive your package.</p>
+    </div>
+    
+    <div class="verification-code">
+        {{ verification_code }}
+    </div>
+    
+    <p style="text-align: center; color: #666; font-size: 14px;">
+        Please share this code with your delivery executive when they arrive.
+    </p>
+    {% endif %}
+    
+    <br>
+    <p style="color: #666; font-size: 12px;">Powered by FastShip</p>
+</body>
+</html>
+

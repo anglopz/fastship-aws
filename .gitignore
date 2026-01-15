@@ -1,0 +1,66 @@
+# Development directories (never track)
+_reports/
+_backups/
+_section_integration/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database and logs
+*.sql
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files (except example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Docker
+data/
+.cursor/
+.cursorrules
+
+# Frontend (Node.js/React)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Remix
+.remix/
+build/
+.server/
+
+# Frontend build
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# TypeScript
+*.tsbuildinfo
