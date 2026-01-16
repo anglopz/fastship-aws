@@ -64,3 +64,27 @@ frontend/.env.*.local
 
 # TypeScript
 *.tsbuildinfo
+
+# Terraform
+terraform.tfstate*
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+.terraform.tfstate.lock.info
+
+# AWS
+*.pem
+*.key
+*.secret
+.env.aws
+.aws-sam/
+samconfig.toml
+awscliv2.zip
+*.zip
+
+# Frontend build (now in src/frontend)
+src/frontend/dist/
+src/frontend/.vite/

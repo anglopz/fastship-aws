@@ -1,0 +1,27 @@
+aws_region = "us-east-1"
+
+vpc_cidr            = "10.1.0.0/16"
+public_subnet_cidrs = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
+private_subnet_cidrs = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
+
+db_name     = "fastship"
+db_username = "admin"
+db_password = "change-me-secure-password"
+
+redis_auth_token = "change-me-redis-token"
+
+backend_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/fastship-backend:latest"
+
+rds_instance_class          = "db.t3.small"
+rds_allocated_storage       = 100
+rds_max_allocated_storage   = 500
+rds_backup_retention_period = 30
+
+redis_node_type              = "cache.t3.small"
+redis_num_cache_nodes        = 2
+redis_snapshot_retention_limit = 7
+
+task_cpu       = 1024
+task_memory    = 2048
+desired_count  = 3
+log_retention_days = 30

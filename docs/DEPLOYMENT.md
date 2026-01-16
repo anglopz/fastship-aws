@@ -385,6 +385,15 @@ curl http://localhost:8000/health/email
 }
 ```
 
+## AWS Deployment
+
+For deploying to AWS using Terraform and ECS, see the comprehensive AWS deployment guide:
+
+- **[AWS Deployment Guide](aws/DEPLOYMENT-AWS.md)** - Complete AWS deployment with Terraform
+- **[Deployment Readiness](aws/DEPLOYMENT-READINESS.md)** - Pre-deployment checklist
+- **[Free Tier Guide](aws/FREE-TIER-VERIFICATION.md)** - Free tier optimization
+- **[Cost Optimization](aws/NAT-GATEWAY-COSTS.md)** - NAT Gateway cost savings
+
 ## Render Deployment
 
 ### Prerequisites

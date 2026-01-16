@@ -6,9 +6,16 @@ This directory contains comprehensive documentation for the FastShip API project
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design, architecture patterns, and technical decisions
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint documentation with examples
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide and configuration
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide (Docker, Render, AWS)
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup, coding standards, and contribution guide
 - **[DECISIONS.md](DECISIONS.md)** - Architecture Decision Records (ADRs)
+
+## AWS Deployment Documentation
+
+- **[AWS Deployment Guide](aws/DEPLOYMENT-AWS.md)** - Complete AWS deployment with Terraform, ECS, RDS
+- **[Deployment Readiness](aws/DEPLOYMENT-READINESS.md)** - Pre-deployment checklist and verification
+- **[Free Tier Guide](aws/FREE-TIER-VERIFICATION.md)** - Free tier compatibility and optimization
+- **[NAT Gateway Costs](aws/NAT-GATEWAY-COSTS.md)** - Cost optimization guide
 
 ## Additional Documentation
 
@@ -24,4 +31,4 @@ This directory contains comprehensive documentation for the FastShip API project
 
 ---
 
-**Last Updated**: January 13, 2026
+**Last Updated**: January 15, 2026

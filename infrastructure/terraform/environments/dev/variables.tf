@@ -1,0 +1,143 @@
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "eu-west-1"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets"
+  type        = list(string)
+  default     = ["10.0.10.0/24", "10.0.11.0/24"]
+}
+
+variable "availability_zones" {
+  description = "List of availability zones"
+  type        = list(string)
+  default     = ["eu-west-1a", "eu-west-1b"]
+}
+
+variable "enable_nat_gateway" {
+  description = "Enable NAT Gateway for private subnets. Set to false for free-tier (saves ~$32/month). Note: RDS/Redis in private subnets won't have internet access without NAT."
+  type        = bool
+  default     = false
+}
+
+variable "database_name" {
+  description = "Database name"
+  type        = string
+  default     = "fastship"
+}
+
+variable "username" {
+  description = "Database master username"
+  type        = string
+  default     = "fastship"
+}
+
+variable "db_password" {
+  description = "Database master password"
+  type        = string
+  sensitive   = true
+}
+
+variable "instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "rds_allocated_storage" {
+  description = "RDS allocated storage in GB"
+  type        = number
+  default     = 20
+}
+
+variable "node_type" {
+  description = "Redis node type"
+  type        = string
+  default     = "cache.t3.micro"
+}
+
+variable "redis_num_cache_nodes" {
+  description = "Number of Redis cache nodes"
+  type        = number
+  default     = 1
+}
+
+variable "redis_auth_token" {
+  description = "Redis authentication token"
+  type        = string
+  sensitive   = true
+}
+
+variable "backend_image" {
+  description = "Backend Docker image URI"
+  type        = string
+  default     = ""
+}
+
+variable "api_task_cpu" {
+  description = "CPU units for API task"
+  type        = number
+  default     = 512
+}
+
+variable "api_task_memory" {
+  description = "Memory for API task in MB"
+  type        = number
+  default     = 1024
+}
+
+variable "api_desired_count" {
+  description = "Desired number of API tasks"
+  type        = number
+  default     = 1
+}
+
+variable "api_use_public_subnets" {
+  description = "Whether to use public subnets for API service"
+  type        = bool
+  default     = false
+}
+
+variable "worker_task_cpu" {
+  description = "CPU units for Celery worker task"
+  type        = number
+  default     = 256
+}
+
+variable "worker_task_memory" {
+  description = "Memory for Celery worker task in MB"
+  type        = number
+  default     = 512
+}
+
+variable "worker_desired_count" {
+  description = "Desired number of Celery worker tasks"
+  type        = number
+  default     = 1
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days"
+  type        = number
+  default     = 7
+}
+
+variable "domain_name" {
+  description = "Domain name for frontend (optional)"
+  type        = string
+  default     = ""
+}
