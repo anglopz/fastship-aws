@@ -88,3 +88,17 @@ awscliv2.zip
 # Frontend build (now in src/frontend)
 src/frontend/dist/
 src/frontend/.vite/
+
+# AWS Documentation (keep only DEPLOYMENT-AWS.md and README.md on GitHub)
+docs/aws/API-GATEWAY-CACHING-ASSESSMENT.md
+docs/aws/CACHING-RATE-LIMITING-ASSESSMENT.md
+docs/aws/DEPLOYMENT-READINESS.md
+docs/aws/DEPLOYMENT-WORKFLOW.md
+docs/aws/FIX-DATABASE-URL-ISSUE.md
+docs/aws/FREE-TIER-VERIFICATION.md
+docs/aws/NAT-GATEWAY-COSTS.md
+docs/aws/NEXT-STEPS.md
+docs/aws/POST-DEPLOYMENT-VERIFICATION.md
+docs/aws/REBUILD-AND-REDEPLOY.md
+docs/aws/TERRAFORM-AWS-CREDENTIALS.md
+docs/aws/VIEW-RESOURCES-AWS-CONSOLE.md
