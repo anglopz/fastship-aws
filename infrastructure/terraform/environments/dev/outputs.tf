@@ -47,3 +47,13 @@ output "api_url" {
   description = "API URL"
   value       = "http://${module.networking.alb_dns_name}"
 }
+
+output "ecr_repository_url" {
+  description = "ECR repository URL for backend Docker image"
+  value       = module.ecr.repository_url
+}
+
+output "ecr_repository_uri" {
+  description = "ECR repository URI (for Docker push/pull)"
+  value       = module.ecr.repository_uri
+}

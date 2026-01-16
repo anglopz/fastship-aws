@@ -397,6 +397,96 @@ FastShipError (base)
 
 ---
 
-**Last Updated**: January 8, 2026  
+## AWS Infrastructure Architecture
+
+### Deployment Architecture
+
+The application is deployed on AWS with the following infrastructure:
+
+```
+Internet
+    |
+    v
+┌─────────────────────────┐
+│   CloudFront (CDN)      │  Frontend static assets
+└──────────┬──────────────┘
+           |
+           v
+┌─────────────────────────┐
+│   S3 Bucket             │  Static files hosting
+└─────────────────────────┘
+
+Internet
+    |
+    v
+┌─────────────────────────┐
+│  Application Load       │  API routing
+│  Balancer (ALB)         │
+└──────────┬──────────────┘
+           |
+           v
+┌─────────────────────────┐
+│   ECS Fargate Cluster   │
+│   ┌─────────────────┐   │
+│   │  API Service    │───┼──┐
+│   │  (FastAPI)      │   │  │
+│   └─────────────────┘   │  │
+│   ┌─────────────────┐   │  │
+│   │ Celery Worker   │───┼──┼──┐
+│   │ (Background)    │   │  │  │
+│   └─────────────────┘   │  │  │
+└──────────────────────────┼──┼──┼──┐
+                           │  │  │  │
+          ┌────────────────┘  │  │  │
+          │                    │  │  │
+          v                    v  v  v
+    ┌──────────┐       ┌──────────┐       ┌──────────┐
+    │   RDS    │       │ ElastiCache│       │  CloudWatch│
+    │PostgreSQL│       │   Redis   │       │   Logs    │
+    └──────────┘       └──────────┘       └──────────┘
+```
+
+### VPC Architecture
+
+**Network Design:**
+- Custom VPC with CIDR `10.0.0.0/16`
+- Public subnets: `10.0.1.0/24`, `10.0.2.0/24` (ALB, ECS API with public IP)
+- Private subnets: `10.0.10.0/24`, `10.0.11.0/24` (Celery workers, RDS, Redis)
+- Multi-AZ deployment for high availability
+
+**VPC Endpoints (Cost Optimization):**
+- **ECR Interface Endpoints** (API + DKR): Allows private subnet tasks to pull Docker images
+- **CloudWatch Logs Interface Endpoint**: Enables private subnet tasks to send logs
+- **S3 Gateway Endpoint**: Free access to S3 from private subnets
+
+**Cost Savings:**
+- VPC Endpoints: ~$28/month (vs NAT Gateway at ~$32/month)
+- Enables free-tier compatibility for portfolio projects
+
+### Service Configuration
+
+**ECS Fargate:**
+- API Service: 256 CPU, 512 MB RAM (free-tier compatible)
+- Celery Worker: 256 CPU, 512 MB RAM
+- Auto-scaling configured for production
+
+**RDS PostgreSQL:**
+- Instance: `db.t3.micro` (free-tier)
+- Version: 15.15 (latest 15.x)
+- Backup retention: 1 day (free-tier max)
+- Multi-AZ: Disabled (dev), Enabled (prod)
+
+**ElastiCache Redis:**
+- Node type: `cache.t3.micro` (free-tier)
+- Single node (dev), Cluster mode (prod)
+
+**Infrastructure as Code:**
+- Terraform modules for all AWS resources
+- Environment-specific configurations (dev/prod)
+- S3 backend for Terraform state with DynamoDB locking
+
+---
+
+**Last Updated**: January 16, 2026  
 **Version**: 1.2.0
 

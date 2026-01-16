@@ -48,8 +48,10 @@ module "rds" {
   db_username = var.username
   db_password = var.db_password
 
-  instance_class    = var.instance_class
-  allocated_storage = var.rds_allocated_storage
+  instance_class          = var.instance_class
+  allocated_storage       = var.rds_allocated_storage
+  backup_retention_period = var.backup_retention_period
+  engine_version          = var.engine_version
 }
 
 module "redis" {
@@ -72,6 +74,13 @@ module "networking" {
   environment       = local.environment
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
+}
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = "fastship"
+  environment  = local.environment
 }
 
 module "ecs" {
@@ -98,10 +107,30 @@ module "ecs" {
   log_retention_days = var.log_retention_days
 
   container_environment = [
+    # Use individual POSTGRES_* variables instead of DATABASE_URL to avoid URL encoding issues
+    # This prevents Python ConfigParser from interpreting special characters (% in password) as interpolation
+    # The app's DatabaseSettings will construct the URL from these individual settings
     {
-      name  = "DATABASE_URL"
-      value = "postgresql+asyncpg://${var.username}:${var.db_password}@${module.rds.db_endpoint}/${var.database_name}"
+      name  = "POSTGRES_SERVER"
+      value = module.rds.db_address
     },
+    {
+      name  = "POSTGRES_PORT"
+      value = tostring(module.rds.db_port)
+    },
+    {
+      name  = "POSTGRES_USER"
+      value = var.username
+    },
+    {
+      name  = "POSTGRES_PASSWORD"
+      value = var.db_password
+    },
+    {
+      name  = "POSTGRES_DB"
+      value = var.database_name
+    },
+    # Redis URL (no special characters in auth token, so safe to use URL)
     {
       name  = "REDIS_URL"
       value = "redis://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}"

@@ -17,12 +17,14 @@ This guide covers deploying the FastShip application to AWS using Terraform and 
 The FastShip application is deployed on AWS using the following services:
 
 - **VPC**: Custom VPC with public and private subnets across multiple availability zones
-- **ECS (Fargate)**: Container orchestration for the backend API
+- **VPC Endpoints**: Interface endpoints for ECR, CloudWatch Logs; Gateway endpoint for S3 (cost-optimized alternative to NAT Gateway)
+- **ECS (Fargate)**: Container orchestration for the backend API and Celery workers
 - **RDS (PostgreSQL)**: Managed database service
 - **ElastiCache (Redis)**: Managed caching and session storage
 - **ALB**: Application Load Balancer for routing traffic to ECS tasks
 - **S3 + CloudFront**: Static frontend hosting with CDN
 - **ECR**: Container registry for Docker images
+- **CloudWatch Logs**: Centralized logging for ECS tasks
 
 ### Architecture Diagram
 

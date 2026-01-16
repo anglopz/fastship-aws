@@ -411,5 +411,120 @@ Use FastAPI lifespan handler to create tables on startup.
 
 ---
 
-**Last Updated**: January 8, 2026
+## ADR-015: VPC Endpoints Instead of NAT Gateway (Cost Optimization)
+
+**Status**: Accepted  
+**Date**: 2026-01-16
+
+### Context
+
+ECS tasks in private subnets need internet access for:
+- Pulling Docker images from ECR
+- Sending logs to CloudWatch
+- Accessing S3 buckets
+
+NAT Gateway costs ~$32/month, which exceeds free tier budget for portfolio projects.
+
+### Decision
+
+Use VPC Endpoints (Interface and Gateway) instead of NAT Gateway for private subnet connectivity.
+
+**Implementation:**
+- **ECR Interface Endpoints** (API + DKR): ~$14/month (2 AZs × $7/AZ)
+- **CloudWatch Logs Interface Endpoint**: ~$14/month (2 AZs × $7/AZ)
+- **S3 Gateway Endpoint**: Free (no data transfer charges)
+
+**Total Cost**: ~$28/month (vs ~$32/month for NAT Gateway)
+**Free Tier Savings**: $32/month avoided
+
+### Consequences
+
+**Positive:**
+- Lower cost than NAT Gateway (~12% savings)
+- Better security (private connectivity to AWS services)
+- No data transfer charges for S3 endpoint
+- Suitable for free-tier portfolio projects
+
+**Negative:**
+- More complex setup (multiple endpoints)
+- Only works for AWS services (not general internet access)
+- Interface endpoints charge per AZ (costs scale with AZs)
+- Requires careful security group configuration
+
+**Trade-offs:**
+- If general internet access is needed, NAT Gateway is still required
+- For portfolio/free-tier projects, VPC endpoints are ideal
+- Production environments may prefer NAT Gateway for simplicity
+
+---
+
+## ADR-016: FastAPI Response Caching with Redis
+
+**Status**: Accepted  
+**Date**: 2026-01-15
+
+### Context
+
+Need to reduce database load and improve API response times for frequently accessed endpoints.
+
+### Decision
+
+Implement Redis-based response caching middleware for FastAPI.
+
+**Features:**
+- Cache GET requests only
+- Configurable TTL per endpoint
+- Cache invalidation support
+- Graceful degradation if Redis unavailable
+
+### Consequences
+
+**Positive:**
+- Reduced database load
+- Faster response times for cached endpoints
+- Scalable (Redis handles cache)
+- Non-blocking (fail-open if Redis down)
+
+**Negative:**
+- Additional Redis dependency
+- Cache invalidation complexity
+- Memory usage for cached responses
+
+---
+
+## ADR-017: Rate Limiting with Redis Sliding Window
+
+**Status**: Accepted  
+**Date**: 2026-01-15
+
+### Context
+
+Need to protect API endpoints from abuse, brute-force attacks, and ensure fair resource usage.
+
+### Decision
+
+Implement Redis-based rate limiting middleware using sliding window algorithm.
+
+**Configuration:**
+- Stricter limits for authentication endpoints (10 req/min)
+- Stricter limits for signup endpoints (5 req/5min)
+- Default: 100 requests per minute
+- IP-based identification (considering X-Forwarded-For from ALB)
+
+### Consequences
+
+**Positive:**
+- Protection against brute-force attacks
+- Fair resource usage
+- Configurable per endpoint
+- Graceful degradation (fail-open if Redis unavailable)
+
+**Negative:**
+- Additional Redis dependency
+- Requires accurate IP identification
+- May block legitimate users during DDoS
+
+---
+
+**Last Updated**: January 16, 2026
 

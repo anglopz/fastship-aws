@@ -10,6 +10,8 @@ from app.api.api_router import master_router
 from app.config import cors_settings
 from app.core.exception_handlers import setup_exception_handlers
 from app.core.middleware import request_logging_middleware
+from app.core.caching import cache_response_middleware
+from app.core.rate_limit import rate_limit_middleware
 from app.core.security import oauth2_scheme_seller, oauth2_scheme_partner
 from app.database.redis import close_redis, get_redis
 from app.database.session import create_db_tables
@@ -156,7 +158,10 @@ app = FastAPI(
 )
 
 # Section 27: Add request logging middleware
-app.middleware("http")(request_logging_middleware)
+# Note: Middleware order matters - rate limiting first, then caching, then logging
+app.middleware("http")(rate_limit_middleware)  # Rate limiting (first)
+app.middleware("http")(cache_response_middleware)  # Response caching
+app.middleware("http")(request_logging_middleware)  # Request logging (last)
 
 # Section 31-32: Add CORS middleware for frontend integration
 # CORS origins are configured via CORS_ORIGINS environment variable
@@ -521,13 +526,18 @@ def get_scalar_docs():
 # Note: /api/v1/health is provided by the health router
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with Redis status (root level for backward compatibility)"""
+    """Health check endpoint with Redis status (root level for backward compatibility)
+    
+    Optimized for ALB health checks - Redis check is non-blocking with timeout.
+    """
+    import asyncio
     redis_status = "disconnected"
     try:
+        # Use asyncio.wait_for to timeout Redis ping quickly (1 second max)
         redis_client = await get_redis()
-        await redis_client.ping()
+        await asyncio.wait_for(redis_client.ping(), timeout=1.0)
         redis_status = "connected"
-    except Exception:
+    except (Exception, asyncio.TimeoutError):
         redis_status = "disconnected"
 
     return {"status": "healthy", "redis": redis_status, "service": "FastAPI Backend"}

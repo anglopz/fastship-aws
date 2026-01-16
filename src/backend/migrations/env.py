@@ -15,9 +15,10 @@ from app.database.models import Shipment, Seller, DeliveryPartner
 # access to the values within the .ini file in use.
 config = context.config
 
-config.set_main_option(
-    "sqlalchemy.url", db_settings.POSTGRES_URL
-)
+# Get database URL directly (bypass ConfigParser to avoid interpolation issues with special characters like %)
+# Store it in config.attributes instead of using set_main_option() which goes through ConfigParser
+database_url = db_settings.POSTGRES_URL
+config.attributes.setdefault("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -46,7 +47,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # Get URL from attributes (bypasses ConfigParser interpolation issues)
+    url = config.attributes.get("sqlalchemy.url") or config.get_main_option("sqlalchemy.url")
+    
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -70,9 +73,14 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-
+    # Get URL from attributes (bypasses ConfigParser interpolation issues)
+    database_url = config.attributes.get("sqlalchemy.url") or config.get_main_option("sqlalchemy.url")
+    
+    # Build config dict directly with URL to bypass ConfigParser
+    alembic_config = {"sqlalchemy.url": database_url}
+    
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        alembic_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

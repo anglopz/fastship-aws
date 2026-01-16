@@ -47,6 +47,7 @@ class DatabaseSettings(BaseSettings):
         Prioritizes DATABASE_URL if provided (e.g., from Render).
         Otherwise builds from individual POSTGRES_* settings.
         Converts postgresql:// to postgresql+asyncpg:// if needed.
+        URL-encodes password to handle special characters safely.
         """
         if self.DATABASE_URL:
             # Convert postgresql:// to postgresql+asyncpg:// if needed
@@ -58,9 +59,14 @@ class DatabaseSettings(BaseSettings):
                 # Already in correct format or needs conversion
                 return self.DATABASE_URL
         
-        # Build from individual settings
+        # Build from individual settings with URL-encoded password
+        # This prevents ConfigParser interpolation issues with special characters like %
+        from urllib.parse import quote_plus
+        encoded_password = quote_plus(self.POSTGRES_PASSWORD)
+        encoded_user = quote_plus(self.POSTGRES_USER) if self.POSTGRES_USER else self.POSTGRES_USER
+        
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+            f"postgresql+asyncpg://{encoded_user}:{encoded_password}@"
             f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
     

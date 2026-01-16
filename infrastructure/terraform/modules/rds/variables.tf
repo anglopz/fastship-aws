@@ -37,9 +37,9 @@ variable "db_password" {
 }
 
 variable "engine_version" {
-  description = "PostgreSQL engine version"
+  description = "PostgreSQL engine version (available in eu-west-1: 15.10, 15.15, 16.6, 16.11, 17.7, 18.1)"
   type        = string
-  default     = "15.4"
+  default     = "15.15"  # Latest 15.x version - best security/features for 15.x series
 }
 
 variable "instance_class" {
@@ -61,9 +61,9 @@ variable "max_allocated_storage" {
 }
 
 variable "backup_retention_period" {
-  description = "Backup retention period in days"
+  description = "Backup retention period in days (max 1 for free tier)"
   type        = number
-  default     = 7
+  default     = 1  # Free tier compatible default
 }
 
 variable "backup_window" {

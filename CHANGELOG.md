@@ -5,6 +5,71 @@ All notable changes to the FastShip API project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-16
+
+### Added
+- **AWS Infrastructure Deployment**:
+  - Complete Terraform infrastructure for AWS deployment
+  - VPC with public/private subnets across multiple AZs
+  - ECS Fargate cluster for backend API and Celery workers
+  - RDS PostgreSQL database (free-tier compatible)
+  - ElastiCache Redis for caching and task queue
+  - Application Load Balancer (ALB) for API routing
+  - S3 + CloudFront for frontend static hosting
+  - ECR for Docker image registry
+  - CloudWatch Logs for centralized logging
+  - VPC Endpoints (ECR, CloudWatch Logs, S3) for cost optimization
+- **FastAPI Middleware**:
+  - Redis-based response caching middleware
+  - Rate limiting middleware with sliding window algorithm
+  - Optimized health check endpoint (non-blocking Redis check)
+- **CI/CD Pipelines**:
+  - GitHub Actions workflow for Terraform deployments
+  - GitHub Actions workflow for backend Docker image builds
+  - GitHub Actions workflow for frontend S3/CloudFront deployments
+- **Documentation**:
+  - Comprehensive AWS deployment guide
+  - Architecture Decision Records (ADRs) for key decisions
+  - Free-tier compatibility guide
+  - Cost optimization documentation
+
+### Fixed
+- **Database Connection Issues**:
+  - Fixed `ValueError: invalid interpolation syntax` in Alembic migrations
+  - Bypassed ConfigParser interpolation for database URLs with special characters
+  - URL-encoded passwords in database connection strings
+- **Import Errors**:
+  - Fixed `NameError: name 'Response' is not defined` in rate limiting middleware
+  - Consistent imports across middleware modules
+- **AWS Deployment Issues**:
+  - Fixed ECS tasks unable to pull images from ECR (VPC endpoints)
+  - Fixed celery worker unable to send logs to CloudWatch (VPC endpoint)
+  - Fixed root endpoint `/` 504 errors (optimized middleware skip paths)
+  - Fixed health check timeout issues (added Redis ping timeout)
+- **RDS Configuration**:
+  - Updated PostgreSQL version to 15.15 (latest 15.x available in eu-west-1)
+  - Fixed backup retention period for free-tier (1 day max)
+  - Fixed password validation (removed invalid characters)
+
+### Changed
+- **Cost Optimization**:
+  - Replaced NAT Gateway with VPC Endpoints (~$28/month vs ~$32/month)
+  - Configured free-tier compatible instance sizes (db.t3.micro, cache.t3.micro)
+  - Reduced RDS backup retention to 1 day (free-tier max)
+- **Infrastructure**:
+  - Modular Terraform structure with reusable modules
+  - Environment-specific configurations (dev/prod)
+  - S3 backend for Terraform state with DynamoDB locking
+- **Middleware Order**:
+  - Rate limiting → Caching → Logging (optimized for performance)
+  - Skip paths for static/documentation endpoints
+
+### Security
+- Rate limiting on authentication endpoints (10 req/min)
+- Rate limiting on signup endpoints (5 req/5min)
+- IP-based identification with X-Forwarded-For support
+- Graceful degradation (fail-open) if Redis unavailable
+
 ## [1.2.0] - 2026-01-13
 
 ### Added
