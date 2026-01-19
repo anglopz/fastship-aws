@@ -39,11 +39,17 @@ jobs:
         cd infrastructure/terraform/environments/dev
         cp terraform.tfvars.example terraform.tfvars
         # Update sensitive values from secrets if provided
+        # Note: These are passed as individual POSTGRES_* and REDIS_* env vars to ECS
+        # to avoid URL encoding/interpolation issues with special characters in passwords
         if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
-          sed -i "s/db_password = .*/db_password = \"${{ secrets.DB_PASSWORD }}\"/" terraform.tfvars
+          # Escape special characters for sed (especially & and /)
+          DB_PASSWORD_ESCAPED=$(echo "${{ secrets.DB_PASSWORD }}" | sed 's/[[\.*^$()+?{|]/\\&/g')
+          sed -i "s|db_password = .*|db_password = \"$DB_PASSWORD_ESCAPED\"|" terraform.tfvars
         fi
         if [ -n "${{ secrets.REDIS_AUTH_TOKEN }}" ]; then
-          sed -i "s/redis_auth_token = .*/redis_auth_token = \"${{ secrets.REDIS_AUTH_TOKEN }}\"/" terraform.tfvars
+          # Escape special characters for sed
+          REDIS_TOKEN_ESCAPED=$(echo "${{ secrets.REDIS_AUTH_TOKEN }}" | sed 's/[[\.*^$()+?{|]/\\&/g')
+          sed -i "s|redis_auth_token = .*|redis_auth_token = \"$REDIS_TOKEN_ESCAPED\"|" terraform.tfvars
         fi
         if [ -n "${{ secrets.ACM_CERTIFICATE_ARN }}" ]; then
           # Update or add acm_certificate_arn
