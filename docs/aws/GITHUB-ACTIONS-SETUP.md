@@ -30,6 +30,7 @@ These are optional but recommended for production:
    - **Important**: This is passed to ECS as `POSTGRES_PASSWORD` (not in `DATABASE_URL`)
    - Individual POSTGRES_* variables are used to avoid URL encoding/interpolation issues with special characters
    - Can contain special characters like: `*`, `>`, `_`, `|`, `%`, `{`, `}`, etc.
+   - Value: `SE*KL>_z2&|rQwpw^9I1K%GBX>&vX{pY`
    - If not set, uses default from `terraform.tfvars.example`
    - Used by: Terraform workflow
 
@@ -37,13 +38,15 @@ These are optional but recommended for production:
    - ElastiCache Redis authentication token
    - **Note**: Currently passed in `REDIS_URL` format: `redis://:TOKEN@HOST:PORT`
    - Redis tokens are typically hexadecimal and don't have special character issues
+   - Value: `965508564c6067a4f10c9a13f4cefd2bbee6097baddd27653d687097531d6fc8`
    - If not set, uses default from `terraform.tfvars.example`
    - Used by: Terraform workflow
 
 6. **ACM_CERTIFICATE_ARN**
-   - ACM certificate ARN for ALB (eu-west-1)
+   - ACM certificate ARN for ALB (eu-west-1) - for `api.fastship-api.com`
    - Get with: `aws acm list-certificates --region eu-west-1 --query 'CertificateSummaryList[?DomainName==`api.fastship-api.com`].CertificateArn' --output text`
-   - Current value: `arn:aws:acm:eu-west-1:337573345298:certificate/872b2b04-d0c4-432c-bbbd-e291df9afdd3`
+   - Value: `arn:aws:acm:eu-west-1:337573345298:certificate/872b2b04-d0c4-432c-bbbd-e291df9afdd3`
+   - **Note**: This is the ALB certificate (different from CloudFront certificate in us-east-1)
    - Used by: Terraform workflow
 
 7. **BACKEND_IMAGE**

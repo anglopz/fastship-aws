@@ -32,6 +32,8 @@ log_retention_days = 7
 
 domain_name = ""
 
-# ACM Certificate ARN for ALB (eu-west-1)
+# ACM Certificate ARN for ALB HTTPS (eu-west-1 region, for api.fastship-api.com)
 # Get from: aws acm list-certificates --region eu-west-1 --query 'CertificateSummaryList[?DomainName==`api.fastship-api.com`].CertificateArn' --output text
+# Note: CloudFront uses a different certificate in us-east-1 (not configured here)
+# Value: arn:aws:acm:eu-west-1:337573345298:certificate/872b2b04-d0c4-432c-bbbd-e291df9afdd3
 acm_certificate_arn = ""
