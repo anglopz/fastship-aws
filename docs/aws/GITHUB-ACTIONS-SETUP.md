@@ -35,8 +35,8 @@ These are optional but recommended for production:
 
 5. **REDIS_AUTH_TOKEN**
    - ElastiCache Redis authentication token
-   - **Important**: This is passed to ECS as `REDIS_AUTH_TOKEN` (not in `REDIS_URL`)
-   - Individual Redis variables are used to avoid URL encoding issues
+   - **Note**: Currently passed in `REDIS_URL` format: `redis://:TOKEN@HOST:PORT`
+   - Redis tokens are typically hexadecimal and don't have special character issues
    - If not set, uses default from `terraform.tfvars.example`
    - Used by: Terraform workflow
 
