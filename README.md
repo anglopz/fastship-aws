@@ -23,9 +23,9 @@ docker-compose up -d
 curl http://localhost:8000/health
 ```
 
-**Frontend:** https://fastship-frontend.onrender.com/  
-**API Documentation:** https://fastship-api.onrender.com/docs  
-**Alternative Docs:** https://fastship-api.onrender.com/scalar
+**Frontend:** https://app.fastship-api.com  
+**API Documentation:** https://api.fastship-api.com/docs  
+**Alternative Docs:** https://api.fastship-api.com/scalar
 
 ## Features
 
@@ -56,8 +56,10 @@ curl http://localhost:8000/health
 - **UI Components**: Custom component library (shadcn/ui style)
 
 ### Infrastructure
+- **Production**: AWS (ECS Fargate, RDS, ElastiCache, ALB, CloudFront, S3)
 - **Containerization**: Docker & Docker Compose
 - **CORS**: Configured for frontend-backend communication
+- **HTTPS/TLS**: Full SSL/TLS encryption with custom domain
 
 ## Requirements
 
@@ -103,7 +105,8 @@ uvicorn app.main:app --reload
 
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and architecture
 - **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
-- **[Deployment](docs/DEPLOYMENT.md)** - Deployment instructions
+- **[AWS Deployment](docs/aws/DEPLOYMENT-AWS.md)** - AWS deployment guide (Production)
+- **[Deployment](docs/DEPLOYMENT.md)** - General deployment instructions (Docker, Render)
 - **[Development](docs/DEVELOPMENT.md)** - Development setup and contribution guide
 - **[Decisions](docs/DECISIONS.md)** - Architecture decision records (ADRs)
 
@@ -191,10 +194,11 @@ MIT License - see LICENSE file for details
 
 ## Links
 
-- **Frontend**: https://fastship-frontend.onrender.com/
-- **API Docs**: https://fastship-api.onrender.com/docs
-- **Scalar Docs**: https://fastship-api.onrender.com/scalar
-- **Health Check**: https://fastship-api.onrender.com/health
+- **Frontend**: https://app.fastship-api.com
+- **API Docs**: https://api.fastship-api.com/docs
+- **Scalar Docs**: https://api.fastship-api.com/scalar
+- **Health Check**: https://api.fastship-api.com/health
+- **AWS Deployment**: See [AWS Deployment Guide](docs/aws/DEPLOYMENT-AWS.md)
 - **Project Analysis**: [_PROJECT_ANALYSIS.md](_PROJECT_ANALYSIS.md)
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 - **Roadmap**: [ROADMAP.md](ROADMAP.md)
