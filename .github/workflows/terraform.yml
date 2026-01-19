@@ -34,6 +34,29 @@ jobs:
       run: terraform validate
       working-directory: ./infrastructure/terraform/environments/dev
     
+    - name: Create terraform.tfvars from example
+      run: |
+        cd infrastructure/terraform/environments/dev
+        cp terraform.tfvars.example terraform.tfvars
+        # Update sensitive values from secrets if provided
+        if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
+          sed -i "s/db_password = .*/db_password = \"${{ secrets.DB_PASSWORD }}\"/" terraform.tfvars
+        fi
+        if [ -n "${{ secrets.REDIS_AUTH_TOKEN }}" ]; then
+          sed -i "s/redis_auth_token = .*/redis_auth_token = \"${{ secrets.REDIS_AUTH_TOKEN }}\"/" terraform.tfvars
+        fi
+        if [ -n "${{ secrets.ACM_CERTIFICATE_ARN }}" ]; then
+          # Update or add acm_certificate_arn
+          if grep -q "acm_certificate_arn" terraform.tfvars; then
+            sed -i "s|acm_certificate_arn = .*|acm_certificate_arn = \"${{ secrets.ACM_CERTIFICATE_ARN }}\"|" terraform.tfvars
+          else
+            echo "acm_certificate_arn = \"${{ secrets.ACM_CERTIFICATE_ARN }}\"" >> terraform.tfvars
+          fi
+        fi
+        if [ -n "${{ secrets.BACKEND_IMAGE }}" ]; then
+          sed -i "s|backend_image = .*|backend_image = \"${{ secrets.BACKEND_IMAGE }}\"|" terraform.tfvars
+        fi
+    
     - name: Terraform Plan
       run: terraform plan -var-file=terraform.tfvars
       working-directory: ./infrastructure/terraform/environments/dev

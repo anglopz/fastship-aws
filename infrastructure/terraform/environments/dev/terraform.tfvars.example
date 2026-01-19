@@ -31,3 +31,7 @@ worker_desired_count = 1
 log_retention_days = 7
 
 domain_name = ""
+
+# ACM Certificate ARN for ALB (eu-west-1)
+# Get from: aws acm list-certificates --region eu-west-1 --query 'CertificateSummaryList[?DomainName==`api.fastship-api.com`].CertificateArn' --output text
+acm_certificate_arn = ""

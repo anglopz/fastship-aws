@@ -29,13 +29,20 @@ jobs:
     
     - name: Deploy to S3
       run: |
+        cd src/frontend
         aws s3 sync \
-          src/frontend/dist/ \
+          ./dist/ \
           s3://fastship-dev-frontend/ \
-          --delete
+          --delete \
+          --region eu-west-1
     
     - name: Invalidate CloudFront cache
       run: |
-        aws cloudfront create-invalidation \
-          --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-          --paths "/*"
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --region eu-west-1
+        else
+          echo "⚠️  CLOUDFRONT_DISTRIBUTION_ID secret not set, skipping cache invalidation"
+        fi
