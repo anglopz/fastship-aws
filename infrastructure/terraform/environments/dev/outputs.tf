@@ -13,6 +13,16 @@ output "cloudfront_domain_name" {
   value       = module.frontend.cloudfront_domain_name
 }
 
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID (for cache invalidation)"
+  value       = module.frontend.cloudfront_distribution_id
+}
+
+output "s3_bucket_name" {
+  description = "S3 bucket name for frontend"
+  value       = module.frontend.s3_bucket_name
+}
+
 output "db_endpoint" {
   description = "RDS endpoint"
   value       = module.rds.db_endpoint

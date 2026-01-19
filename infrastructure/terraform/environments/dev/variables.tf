@@ -153,3 +153,9 @@ variable "domain_name" {
   type        = string
   default     = ""
 }
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for HTTPS listener (must be in us-east-1 for ALB). Leave empty if not using HTTPS yet."
+  type        = string
+  default     = ""
+}

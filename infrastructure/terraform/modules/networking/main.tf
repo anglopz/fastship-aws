@@ -34,10 +34,38 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
+# HTTP listener - redirects to HTTPS if certificate is provided, otherwise forwards
 resource "aws_lb_listener" "backend" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
+
+  default_action {
+    type = var.acm_certificate_arn != "" ? "redirect" : "forward"
+
+    # Redirect to HTTPS if certificate is configured
+    dynamic "redirect" {
+      for_each = var.acm_certificate_arn != "" ? [1] : []
+      content {
+        protocol    = "HTTPS"
+        port        = "443"
+        status_code = "HTTP_301"
+      }
+    }
+
+    # Forward to target group if no certificate (fallback)
+    target_group_arn = var.acm_certificate_arn == "" ? aws_lb_target_group.backend.arn : null
+  }
+}
+
+# HTTPS listener (only created if certificate ARN is provided)
+resource "aws_lb_listener" "backend_https" {
+  count             = var.acm_certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.acm_certificate_arn
 
   default_action {
     type             = "forward"

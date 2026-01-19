@@ -21,10 +21,12 @@ The FastShip application is deployed on AWS using the following services:
 - **ECS (Fargate)**: Container orchestration for the backend API and Celery workers
 - **RDS (PostgreSQL)**: Managed database service
 - **ElastiCache (Redis)**: Managed caching and session storage
-- **ALB**: Application Load Balancer for routing traffic to ECS tasks
+- **ALB**: Application Load Balancer with HTTPS/TLS and HTTP→HTTPS redirect
 - **S3 + CloudFront**: Static frontend hosting with CDN
 - **ECR**: Container registry for Docker images
 - **CloudWatch Logs**: Centralized logging for ECS tasks
+- **ACM**: SSL/TLS certificates for ALB and CloudFront
+- **Route53**: DNS management and custom domain configuration
 
 ### Architecture Diagram
 
@@ -32,21 +34,20 @@ The FastShip application is deployed on AWS using the following services:
 Internet
     |
     v
-CloudFront (Frontend)
+Route53 (DNS)
     |
-    v
-S3 Bucket (Static Files)
-    
-Internet
+    +---> CloudFront (Frontend) ---> S3 Bucket (Static Files)
+    |         |
+    |         v
+    |    https://app.fastship-api.com
     |
-    v
-Application Load Balancer
-    |
-    v
-ECS Fargate (Backend API)
-    |                |
-    v                v
-  RDS PostgreSQL   ElastiCache Redis
+    +---> ALB (HTTPS) ---> ECS Fargate (Backend API)
+              |                |
+              |                +---> RDS PostgreSQL
+              |                +---> ElastiCache Redis
+              |
+              v
+    https://api.fastship-api.com
 ```
 
 ## Prerequisites
@@ -185,6 +186,11 @@ make deploy-backend ENV=dev
 ../../infrastructure/scripts/deploy-frontend.sh dev
 ```
 
+Or update frontend with HTTPS API URL:
+```bash
+../../infrastructure/scripts/update-frontend-https.sh dev
+```
+
 Or use the Makefile:
 ```bash
 make deploy-frontend ENV=dev
@@ -229,16 +235,74 @@ Configure the following secrets in your GitHub repository:
 - **Push to `main`**: Deploys to production environment
 - **Pull requests**: Run validation and tests only
 
+## HTTPS & Custom Domain Setup
+
+### Prerequisites
+
+1. **Domain registered** (e.g., `fastship-api.com`)
+2. **Route53 hosted zone** created for your domain
+3. **ACM certificates** requested:
+   - ALB certificate in the same region as ALB (e.g., `eu-west-1`)
+   - CloudFront certificate in `us-east-1` (required for CloudFront)
+
+### Certificate Configuration
+
+1. **Request ACM certificates**:
+   ```bash
+   # ALB certificate (api.fastship-api.com) - same region as ALB
+   aws acm request-certificate \
+     --domain-name api.fastship-api.com \
+     --region eu-west-1 \
+     --validation-method DNS
+   
+   # CloudFront certificate (fastship-api.com, www, app) - us-east-1
+   aws acm request-certificate \
+     --domain-name fastship-api.com \
+     --subject-alternative-names www.fastship-api.com app.fastship-api.com \
+     --region us-east-1 \
+     --validation-method DNS
+   ```
+
+2. **Add DNS validation records** to Route53 (CNAME records from ACM)
+
+3. **Wait for certificate validation** (5-30 minutes)
+
+4. **Update Terraform** with certificate ARNs:
+   ```hcl
+   # In terraform.tfvars
+   acm_certificate_arn = "arn:aws:acm:eu-west-1:ACCOUNT:certificate/CERT-ID"
+   ```
+
+5. **Apply Terraform** to add HTTPS listener and HTTP redirect:
+   ```bash
+   terraform apply -var-file=terraform.tfvars
+   ```
+
+### Route53 DNS Records
+
+Configure A records in Route53:
+
+- `api.fastship-api.com` → ALB DNS name (dualstack)
+- `app.fastship-api.com` → CloudFront distribution domain
+- `fastship-api.com` → CloudFront distribution domain
+
+### Live URLs
+
+After deployment:
+- **API HTTPS**: `https://api.fastship-api.com`
+- **API HTTP**: `http://api.fastship-api.com` (redirects to HTTPS)
+- **Frontend**: `https://app.fastship-api.com`
+
 ## Configuration
 
 ### Environment Variables
 
 Backend environment variables are set in the ECS task definition. Common variables:
 
-- `DATABASE_URL`: PostgreSQL connection string
+- `DATABASE_URL`: PostgreSQL connection string (or individual `POSTGRES_*` variables)
 - `REDIS_URL`: Redis connection string
 - `JWT_SECRET`: JWT signing secret
-- `CORS_ORIGINS`: Allowed CORS origins
+- `CORS_ORIGINS`: Allowed CORS origins (e.g., `https://app.fastship-api.com`)
 - `MAIL_*`: Email configuration
 
 ### Database Migrations
@@ -314,6 +378,10 @@ aws cloudfront get-distribution --id <distribution-id>
 
 ## Cost Optimization
 
+- **NAT Gateway disabled** in dev (using VPC endpoints instead)
+- **RDS backup retention**: 1 day (free-tier compatible)
+- **RDS multi-AZ**: disabled (free-tier compatible)
+- **Instance types**: t3.micro (free-tier eligible)
 - Use reserved instances for RDS in production
 - Enable auto-scaling for ECS based on CPU/memory
 - Configure S3 lifecycle policies for old CloudFront logs

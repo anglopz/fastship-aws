@@ -1,72 +1,102 @@
 #!/bin/bash
-
 set -e
 
-# Deploy frontend to S3 and invalidate CloudFront
-# Usage: ./deploy-frontend.sh [environment]
+# Deploy frontend to S3 + CloudFront
+# Usage: ./deploy-frontend.sh [environment] [api_url]
 
 ENVIRONMENT=${1:-dev}
-AWS_REGION=${AWS_REGION:-us-east-1}
+API_URL=${2:-"http://fastship-dev-alb-1317868336.eu-west-1.elb.amazonaws.com"}
+AWS_REGION=${AWS_REGION:-eu-west-1}
+AWS_PROFILE=${AWS_PROFILE:-fastship}
 
-echo "Deploying frontend to ${ENVIRONMENT} environment..."
+echo "🚀 Deploying frontend for ${ENVIRONMENT} environment..."
+echo "API URL: ${API_URL}"
+echo ""
 
-# Determine S3 bucket and CloudFront distribution based on environment
-if [ "$ENVIRONMENT" = "prod" ]; then
-    S3_BUCKET="fastship-prod-frontend"
-    CLOUDFRONT_DIST_ID=${CLOUDFRONT_DISTRIBUTION_PROD:-""}
-else
-    S3_BUCKET="fastship-dev-frontend"
-    CLOUDFRONT_DIST_ID=${CLOUDFRONT_DISTRIBUTION_DEV:-""}
+# Get Terraform outputs
+cd "$(dirname "$0")/../terraform/environments/${ENVIRONMENT}"
+export AWS_PROFILE=${AWS_PROFILE}
+
+S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "fastship-dev-frontend")
+CLOUDFRONT_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
+
+if [ -z "$CLOUDFRONT_ID" ]; then
+    echo "⚠️  Warning: Could not get CloudFront distribution ID from Terraform"
+    echo "   Cache invalidation will be skipped"
 fi
 
 # Build frontend
-echo "Building frontend..."
-cd "$(dirname "$0")/../../src/frontend"
+echo "📦 Building frontend..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+FRONTEND_DIR="$PROJECT_ROOT/src/frontend"
 
-# Set API URL based on environment
-if [ "$ENVIRONMENT" = "prod" ]; then
-    export VITE_API_URL=${VITE_API_URL_PROD:-"https://api.fastship.com"}
-else
-    export VITE_API_URL=${VITE_API_URL_DEV:-"http://localhost:8000"}
+if [ ! -d "$FRONTEND_DIR" ]; then
+    echo "❌ Error: Frontend directory not found at $FRONTEND_DIR"
+    exit 1
 fi
 
-npm ci
+cd "$FRONTEND_DIR"
+
+# Set API URL for build
+export VITE_API_URL="${API_URL}"
+
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "📥 Installing dependencies..."
+    npm install
+fi
+
+# Build
+echo "🔨 Building production bundle..."
 npm run build
 
+if [ ! -d "dist" ]; then
+    echo "❌ Build failed: dist/ directory not found"
+    exit 1
+fi
+
 # Deploy to S3
-echo "Deploying to S3 bucket: ${S3_BUCKET}..."
-aws s3 sync dist/ s3://${S3_BUCKET}/ \
-    --region ${AWS_REGION} \
+echo "☁️  Deploying to S3 bucket: ${S3_BUCKET}..."
+aws s3 sync ./dist/ \
+    s3://${S3_BUCKET}/ \
     --delete \
+    --region ${AWS_REGION} \
+    --profile ${AWS_PROFILE} \
     --cache-control "public, max-age=31536000, immutable" \
-    --exclude "index.html" \
-    --exclude "*.html"
+    --exclude "*.html" \
+    --exclude "*.json"
 
-# Upload HTML files with no cache
-aws s3 sync dist/ s3://${S3_BUCKET}/ \
+# Upload HTML files with shorter cache
+aws s3 sync ./dist/ \
+    s3://${S3_BUCKET}/ \
     --region ${AWS_REGION} \
-    --delete \
-    --cache-control "no-cache, no-store, must-revalidate" \
-    --include "*.html"
+    --profile ${AWS_PROFILE} \
+    --cache-control "public, max-age=0, must-revalidate" \
+    --include "*.html" \
+    --include "*.json"
 
-# Invalidate CloudFront if distribution ID is provided
-if [ -n "$CLOUDFRONT_DIST_ID" ]; then
-    echo "Invalidating CloudFront distribution: ${CLOUDFRONT_DIST_ID}..."
+echo "✅ Frontend deployed to S3"
+
+# Invalidate CloudFront cache
+if [ -n "$CLOUDFRONT_ID" ]; then
+    echo "🔄 Invalidating CloudFront cache..."
     INVALIDATION_ID=$(aws cloudfront create-invalidation \
-        --distribution-id ${CLOUDFRONT_DIST_ID} \
+        --distribution-id ${CLOUDFRONT_ID} \
         --paths "/*" \
+        --region ${AWS_REGION} \
+        --profile ${AWS_PROFILE} \
         --query 'Invalidation.Id' \
         --output text)
     
-    echo "CloudFront invalidation created: ${INVALIDATION_ID}"
-    echo "Waiting for invalidation to complete..."
-    aws cloudfront wait invalidation-completed \
-        --distribution-id ${CLOUDFRONT_DIST_ID} \
-        --id ${INVALIDATION_ID}
-    
-    echo "CloudFront invalidation completed!"
+    echo "✅ CloudFront cache invalidation created: ${INVALIDATION_ID}"
+    echo "   This may take 1-5 minutes to complete"
 else
-    echo "Warning: CloudFront distribution ID not set. Skipping invalidation."
+    echo "⚠️  Skipping CloudFront cache invalidation (distribution ID not found)"
 fi
 
-echo "Frontend deployment completed successfully!"
+echo ""
+echo "✅ Frontend deployment complete!"
+echo ""
+echo "Frontend URL: https://${CLOUDFRONT_ID}.cloudfront.net"
+echo "   (or check CloudFront domain in Terraform outputs)"

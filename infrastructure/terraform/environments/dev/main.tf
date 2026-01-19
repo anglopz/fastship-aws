@@ -70,10 +70,11 @@ module "redis" {
 module "networking" {
   source = "../../modules/networking"
 
-  project_name      = "fastship"
-  environment       = local.environment
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_ids = module.vpc.public_subnet_ids
+  project_name        = "fastship"
+  environment         = local.environment
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  acm_certificate_arn = var.acm_certificate_arn
 }
 
 module "ecr" {
