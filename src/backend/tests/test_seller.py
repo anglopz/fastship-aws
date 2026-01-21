@@ -69,7 +69,7 @@ async def test_seller_login_success(client: AsyncClient, test_session: AsyncSess
         "password": "loginpass123"
     }
     
-    signup_response = await client.post("/seller/signup", json=seller_data)
+    signup_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert signup_response.status_code == 200
     
     # Phase 2: Verify email before login (enforcement enabled)
@@ -132,10 +132,10 @@ async def test_seller_login_wrong_password(client: AsyncClient, test_session: As
     seller_data = {
         "name": "Password Test Seller",
         "email": "password@example.com",
-        "password": "correctpassword123"
+        "password": "correctpass123"
     }
     
-    signup_response = await client.post("/seller/signup", json=seller_data)
+    signup_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert signup_response.status_code == 200
     
     # Try login with wrong password
@@ -163,7 +163,7 @@ async def test_seller_login_unverified_email(client: AsyncClient, test_session: 
         "password": "testpass123"
     }
     
-    signup_response = await client.post("/seller/signup", json=seller_data)
+    signup_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert signup_response.status_code == 200
     
     # Try to login without verifying email
@@ -195,7 +195,7 @@ async def test_seller_verify_email(client: AsyncClient, test_session: AsyncSessi
         "password": "testpass123"
     }
     
-    signup_response = await client.post("/seller/signup", json=seller_data)
+    signup_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert signup_response.status_code == 200
     seller_id = signup_response.json()["id"]
     

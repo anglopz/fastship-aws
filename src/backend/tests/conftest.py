@@ -141,7 +141,7 @@ async def seller_token(client: AsyncClient, test_session):
     
     # Login to get token
     response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data={
             "username": example.SELLER["email"],
             "password": example.SELLER["password"],
@@ -206,7 +206,7 @@ async def partner_token(client: AsyncClient, test_session):
     
     # Login to get token
     response = await client.post(
-        "/partner/token",
+        "/api/v1/partner/token",
         data={
             "username": example.DELIVERY_PARTNER["email"],
             "password": example.DELIVERY_PARTNER["password"],

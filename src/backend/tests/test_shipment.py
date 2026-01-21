@@ -111,7 +111,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
         "servicable_locations": [20001],
         "max_handling_capacity": 10
     }
-    await client.post("/partner/signup", json=partner_data)
+    await client.post("/api/v1/partner/signup", json=partner_data)
     
     # Create seller
     seller_data = {
@@ -186,7 +186,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
         "servicable_locations": [30001],
         "max_handling_capacity": 10
     }
-    await client.post("/partner/signup", json=partner_data)
+    await client.post("/api/v1/partner/signup", json=partner_data)
     
     # Create seller and shipment
     seller_data = {
@@ -194,7 +194,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
         "email": "templatetest@example.com",
         "password": "testpass123"
     }
-    await client.post("/seller/signup", json=seller_data)
+    await client.post("/api/v1/seller/signup", json=seller_data)
     
     # Phase 2: Verify email before login
     from app.database.models import Seller
