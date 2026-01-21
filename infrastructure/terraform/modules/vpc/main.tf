@@ -106,3 +106,4 @@ resource "aws_route_table_association" "private" {
 data "aws_availability_zones" "available" {
   state = "available"
 }
+# Test comment - CI/CD workflow verification 2026-01-21
