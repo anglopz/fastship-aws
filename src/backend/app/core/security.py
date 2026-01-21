@@ -64,11 +64,32 @@ oauth2_scheme = oauth2_scheme_seller
 
 def hash_password(password: str) -> str:
     """Hash una contraseña, manejando límite de 72 bytes de bcrypt"""
+    # Ensure password is a string
+    if not isinstance(password, str):
+        password = str(password)
+    
     # Truncate password to ensure it's <= 72 bytes
+    # This MUST happen before passing to password_context.hash()
+    # because passlib/bcrypt checks the byte length and raises ValueError if > 72
     password = _truncate_password(password)
     
+    # Verify final byte length is safe before calling bcrypt
+    final_check = password.encode("utf-8")
+    if len(final_check) > 72:
+        # Emergency truncation - should never happen, but safety check
+        password = final_check[:72].decode("utf-8", errors="ignore")
+    
     # Hash using passlib/bcrypt
-    return password_context.hash(password)
+    # At this point, password is guaranteed to be <= 72 bytes when encoded
+    try:
+        return password_context.hash(password)
+    except ValueError as e:
+        if "72 bytes" in str(e):
+            # Final safety: if somehow we still get the error, truncate and retry
+            password_bytes = password.encode("utf-8")[:72]
+            password = password_bytes.decode("utf-8", errors="ignore")
+            return password_context.hash(password)
+        raise
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
