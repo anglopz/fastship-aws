@@ -32,34 +32,52 @@ oauth2_scheme = oauth2_scheme_seller
 
 def hash_password(password: str) -> str:
     """Hash una contraseña, manejando límite de 72 bytes de bcrypt"""
-    # Ensure password is a string and encode to bytes
+    # Ensure password is a string
     if not isinstance(password, str):
         password = str(password)
     
-    # Truncar si es muy larga para bcrypt (safety check)
+    # Always truncate to 72 bytes to avoid bcrypt errors
+    # bcrypt has a hard limit of 72 bytes, and passlib enforces this strictly
     password_bytes = password.encode("utf-8")
     if len(password_bytes) > 72:
         password_bytes = password_bytes[:72]
-        password = password_bytes.decode("utf-8", errors="ignore")
+        # Decode back to string, using error handling to avoid encoding issues
+        try:
+            password = password_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            # If truncation breaks UTF-8, decode with error handling
+            password = password_bytes.decode("utf-8", errors="ignore")
         print(f"⚠️  Contraseña truncada a {len(password_bytes)} bytes para bcrypt")
     
-    # Always ensure we're passing a string with <= 72 bytes to bcrypt
+    # Ensure we never pass more than 72 bytes to bcrypt
+    # Double-check the byte length before hashing
+    final_bytes = password.encode("utf-8")
+    if len(final_bytes) > 72:
+        password = password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
+    
     return password_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica una contraseña contra su hash"""
-    # Ensure password is a string and encode to bytes
+    # Ensure password is a string
     if not isinstance(plain_password, str):
         plain_password = str(plain_password)
     
-    # Truncar si es muy larga para bcrypt (safety check)
+    # Always truncate to 72 bytes to avoid bcrypt errors
     password_bytes = plain_password.encode("utf-8")
     if len(password_bytes) > 72:
         password_bytes = password_bytes[:72]
-        plain_password = password_bytes.decode("utf-8", errors="ignore")
+        try:
+            plain_password = password_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            plain_password = password_bytes.decode("utf-8", errors="ignore")
+    
+    # Double-check the byte length before verification
+    final_bytes = plain_password.encode("utf-8")
+    if len(final_bytes) > 72:
+        plain_password = plain_password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
 
-    # Always ensure we're passing a string with <= 72 bytes to bcrypt
     return password_context.verify(plain_password, hashed_password)
 
 
