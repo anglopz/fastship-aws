@@ -26,7 +26,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
     seller_data = {
         "name": "Test Seller",
         "email": "testseller@example.com",
-        "password": "testpassword123"
+        "password": "testpass123"
     }
     seller_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert seller_response.status_code == 200

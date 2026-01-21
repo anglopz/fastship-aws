@@ -15,7 +15,7 @@ async def test_seller_signup(client: AsyncClient, test_session: AsyncSession):
     seller_data = {
         "name": "Test Seller",
         "email": "test@example.com",
-        "password": "testpassword123"
+        "password": "testpass123"
     }
     
     response = await client.post("/api/v1/seller/signup", json=seller_data)
@@ -40,7 +40,7 @@ async def test_seller_signup_duplicate_email(client: AsyncClient, test_session: 
     seller_data = {
         "name": "Test Seller",
         "email": "duplicate@example.com",
-        "password": "testpassword123"
+        "password": "testpass123"
     }
     
     # Create first seller
@@ -66,7 +66,7 @@ async def test_seller_login_success(client: AsyncClient, test_session: AsyncSess
     seller_data = {
         "name": "Login Test Seller",
         "email": "login@example.com",
-        "password": "loginpassword123"
+        "password": "loginpass123"
     }
     
     signup_response = await client.post("/seller/signup", json=seller_data)
@@ -160,7 +160,7 @@ async def test_seller_login_unverified_email(client: AsyncClient, test_session: 
     seller_data = {
         "name": "Unverified Seller",
         "email": "unverified@example.com",
-        "password": "testpassword123"
+        "password": "testpass123"
     }
     
     signup_response = await client.post("/seller/signup", json=seller_data)
@@ -192,7 +192,7 @@ async def test_seller_verify_email(client: AsyncClient, test_session: AsyncSessi
     seller_data = {
         "name": "Verify Test Seller",
         "email": "verify@example.com",
-        "password": "testpassword123"
+        "password": "testpass123"
     }
     
     signup_response = await client.post("/seller/signup", json=seller_data)
