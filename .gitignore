@@ -92,6 +92,7 @@ src/frontend/.vite/
 # AWS Documentation (keep only DEPLOYMENT-AWS.md and README.md on GitHub)
 docs/aws/API-GATEWAY-CACHING-ASSESSMENT.md
 docs/aws/CACHING-RATE-LIMITING-ASSESSMENT.md
+docs/aws/CI-CD-VERIFICATION.md
 docs/aws/DEPLOYMENT-READINESS.md
 docs/aws/DEPLOYMENT-WORKFLOW.md
 docs/aws/FIX-DATABASE-URL-ISSUE.md
