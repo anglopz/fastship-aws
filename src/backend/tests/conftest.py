@@ -125,12 +125,12 @@ async def seller_token(client: AsyncClient, test_session):
         
         if not seller:
             # Create seller
-            from app.services.user import password_context
+            from app.core.security import hash_password
             seller = Seller(
                 name=example.SELLER["name"],
                 email=example.SELLER["email"],
                 email_verified=True,  # Pre-verified for testing
-                password_hash=password_context.hash(example.SELLER["password"]),
+                password_hash=hash_password(example.SELLER["password"]),
             )
             session.add(seller)
             await session.commit()
@@ -175,7 +175,7 @@ async def partner_token(client: AsyncClient, test_session):
         
         if not partner:
             # Create locations and partner
-            from app.services.user import password_context
+            from app.core.security import hash_password
             
             locations = []
             for zip_code in example.DELIVERY_PARTNER["servicable_locations"]:
@@ -193,7 +193,7 @@ async def partner_token(client: AsyncClient, test_session):
                 name=example.DELIVERY_PARTNER["name"],
                 email=example.DELIVERY_PARTNER["email"],
                 email_verified=True,  # Pre-verified for testing
-                password_hash=password_context.hash(example.DELIVERY_PARTNER["password"]),
+                password_hash=hash_password(example.DELIVERY_PARTNER["password"]),
                 max_handling_capacity=example.DELIVERY_PARTNER["max_handling_capacity"],
                 servicable_locations=locations,
             )
