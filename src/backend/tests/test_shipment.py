@@ -16,7 +16,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
         "name": "Test Partner",
         "email": "testpartner@example.com",
         "password": "testpass123",
-        "serviceable_zip_codes": [10001, 20001, 30001],
+        "servicable_locations": [10001, 20001, 30001],
         "max_handling_capacity": 10
     }
     partner_response = await client.post("/api/v1/partner/signup", json=partner_data)
@@ -108,7 +108,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
         "name": "Timeline Partner",
         "email": "timelinepartner@example.com",
         "password": "testpass123",
-        "serviceable_zip_codes": [20001],
+        "servicable_locations": [20001],
         "max_handling_capacity": 10
     }
     await client.post("/partner/signup", json=partner_data)
@@ -183,7 +183,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
         "name": "Template Partner",
         "email": "templatepartner@example.com",
         "password": "testpass123",
-        "serviceable_zip_codes": [30001],
+        "servicable_locations": [30001],
         "max_handling_capacity": 10
     }
     await client.post("/partner/signup", json=partner_data)
