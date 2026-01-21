@@ -19,7 +19,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 # Password hashing context
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Note: bcrypt has a 72-byte limit. Passlib will raise ValueError if password exceeds this.
+# We handle truncation in _truncate_password() before calling hash/verify.
+password_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__ident="2b",  # Use bcrypt 2b format
+)
 
 
 def _truncate_password(password: str) -> str:
@@ -67,11 +73,28 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica una contraseña contra su hash"""
+    # Ensure password is a string
+    if not isinstance(plain_password, str):
+        plain_password = str(plain_password)
+    
     # Truncate password to ensure it's <= 72 bytes
     plain_password = _truncate_password(plain_password)
     
+    # Verify final byte length is safe
+    final_check = plain_password.encode("utf-8")
+    if len(final_check) > 72:
+        plain_password = final_check[:72].decode("utf-8", errors="ignore")
+    
     # Verify using passlib/bcrypt
-    return password_context.verify(plain_password, hashed_password)
+    try:
+        return password_context.verify(plain_password, hashed_password)
+    except ValueError as e:
+        if "72 bytes" in str(e):
+            # Final safety: if somehow we still get the error, truncate and retry
+            password_bytes = plain_password.encode("utf-8")[:72]
+            plain_password = password_bytes.decode("utf-8", errors="ignore")
+            return password_context.verify(plain_password, hashed_password)
+        raise
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
