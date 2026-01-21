@@ -18,7 +18,7 @@ async def test_seller_signup(client: AsyncClient, test_session: AsyncSession):
         "password": "testpassword123"
     }
     
-    response = await client.post("/seller/signup", json=seller_data)
+    response = await client.post("/api/v1/seller/signup", json=seller_data)
     
     assert response.status_code == 200  # Changed from 201
     data = response.json()
@@ -44,11 +44,11 @@ async def test_seller_signup_duplicate_email(client: AsyncClient, test_session: 
     }
     
     # Create first seller
-    response1 = await client.post("/seller/signup", json=seller_data)
+    response1 = await client.post("/api/v1/seller/signup", json=seller_data)
     assert response1.status_code == 200
     
     # Try to create duplicate
-    response2 = await client.post("/seller/signup", json=seller_data)
+    response2 = await client.post("/api/v1/seller/signup", json=seller_data)
     # The service currently allows duplicates (no unique constraint check in service)
     # Database constraint will handle this, but service doesn't check beforehand
     # Accept both success (if DB allows) or error responses
@@ -91,7 +91,7 @@ async def test_seller_login_success(client: AsyncClient, test_session: AsyncSess
     }
     
     response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data=login_data,  # Use data= for form data (OAuth2PasswordRequestForm)
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -113,7 +113,7 @@ async def test_seller_login_invalid_credentials(client: AsyncClient, test_sessio
     }
     
     response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data=login_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -145,7 +145,7 @@ async def test_seller_login_wrong_password(client: AsyncClient, test_session: As
     }
     
     response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data=login_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -173,7 +173,7 @@ async def test_seller_login_unverified_email(client: AsyncClient, test_session: 
     }
     
     response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data=login_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -204,7 +204,7 @@ async def test_seller_verify_email(client: AsyncClient, test_session: AsyncSessi
     token = generate_url_safe_token({"id": seller_id})
     
     # Verify email
-    response = await client.get(f"/seller/verify?token={token}")
+    response = await client.get(f"/api/v1/seller/verify?token={token}")
     assert response.status_code == 200
     data = response.json()
     assert "verified" in data.get("detail", "").lower()
@@ -223,7 +223,7 @@ async def test_seller_verify_email(client: AsyncClient, test_session: AsyncSessi
 @pytest.mark.asyncio
 async def test_seller_verify_email_invalid_token(client: AsyncClient):
     """Test email verification with invalid token"""
-    response = await client.get("/seller/verify?token=invalid_token")
+    response = await client.get("/api/v1/seller/verify?token=invalid_token")
     assert response.status_code == 400
     error_data = response.json()
     error_msg = (error_data.get("detail") or error_data.get("message") or "").lower()

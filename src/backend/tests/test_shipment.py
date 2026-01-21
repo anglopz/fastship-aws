@@ -19,7 +19,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
         "serviceable_zip_codes": [10001, 20001, 30001],
         "max_handling_capacity": 10
     }
-    partner_response = await client.post("/partner/signup", json=partner_data)
+    partner_response = await client.post("/api/v1/partner/signup", json=partner_data)
     assert partner_response.status_code == 200
     
     # Create a seller
@@ -28,7 +28,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
         "email": "testseller@example.com",
         "password": "testpassword123"
     }
-    seller_response = await client.post("/seller/signup", json=seller_data)
+    seller_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert seller_response.status_code == 200
     
     # Phase 2: Verify email before login
@@ -44,7 +44,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
     
     # Login to get token
     login_response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data={"username": seller_data["email"], "password": seller_data["password"]},
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -59,7 +59,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
         "client_contact_email": "client@example.com"
     }
     shipment_response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=shipment_data,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -67,7 +67,7 @@ async def test_shipment_track_endpoint_exists(client: AsyncClient, test_session:
     shipment_id = shipment_response.json()["id"]
     
     # Test track endpoint
-    track_response = await client.get(f"/shipment/track?id={shipment_id}")
+    track_response = await client.get(f"/api/v1/shipment/track?id={shipment_id}")
     
     assert track_response.status_code == 200
     assert track_response.headers["content-type"].startswith("text/html")
@@ -86,7 +86,7 @@ async def test_shipment_track_not_found(client: AsyncClient, test_session: Async
     from uuid import uuid4
     
     fake_id = uuid4()
-    response = await client.get(f"/shipment/track?id={fake_id}")
+    response = await client.get(f"/api/v1/shipment/track?id={fake_id}")
     
     assert response.status_code == 404
     # Check if response is JSON (error) or HTML (404 page)
@@ -119,7 +119,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
         "email": "timelineseller@example.com",
         "password": "testpass123"
     }
-    seller_response = await client.post("/seller/signup", json=seller_data)
+    seller_response = await client.post("/api/v1/seller/signup", json=seller_data)
     assert seller_response.status_code == 200
     
     # Phase 2: Verify email before login
@@ -135,7 +135,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
     
     # Login
     login_response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data={"username": seller_data["email"], "password": seller_data["password"]},
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -150,7 +150,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
         "client_contact_email": "timelineclient@example.com"
     }
     shipment_response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=shipment_data,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -158,7 +158,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
     shipment_id = shipment_response.json()["id"]
     
     # Get timeline endpoint
-    timeline_response = await client.get(f"/shipment/timeline?id={shipment_id}")
+    timeline_response = await client.get(f"/api/v1/shipment/timeline?id={shipment_id}")
     assert timeline_response.status_code == 200
     timeline = timeline_response.json()
     
@@ -167,7 +167,7 @@ async def test_shipment_track_with_timeline(client: AsyncClient, test_session: A
     assert timeline[0]["status"] == "placed"
     
     # Test track endpoint
-    track_response = await client.get(f"/shipment/track?id={shipment_id}")
+    track_response = await client.get(f"/api/v1/shipment/track?id={shipment_id}")
     assert track_response.status_code == 200
     
     html_content = track_response.text
@@ -208,7 +208,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
         await session.commit()
     
     login_response = await client.post(
-        "/seller/token",
+        "/api/v1/seller/token",
         data={"username": seller_data["email"], "password": seller_data["password"]},
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -222,7 +222,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
         "client_contact_email": "templateclient@example.com"
     }
     shipment_response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=shipment_data,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -230,7 +230,7 @@ async def test_shipment_track_template_variables(client: AsyncClient, test_sessi
     shipment_id = shipment_response.json()["id"]
     
     # Get track page
-    track_response = await client.get(f"/shipment/track?id={shipment_id}")
+    track_response = await client.get(f"/api/v1/shipment/track?id={shipment_id}")
     assert track_response.status_code == 200
     
     html = track_response.text
