@@ -15,6 +15,25 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd src/backend
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        cd src/backend
+        pytest tests/ -v --tb=short
+      env:
+        TEST_DATABASE_URL: postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db
+        TESTING: "true"
+    
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
