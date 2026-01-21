@@ -14,7 +14,7 @@ async def test_delivery_partner_signup(client: AsyncClient, test_session: AsyncS
         "name": "Test Partner",
         "email": "partner@example.com",
         "password": "testpassword123",
-        "serviceable_zip_codes": [10001, 10002, 10003],
+        "servicable_locations": [10001, 10002, 10003],
         "max_handling_capacity": 10
     }
     
@@ -25,7 +25,7 @@ async def test_delivery_partner_signup(client: AsyncClient, test_session: AsyncS
     
     assert data["name"] == partner_data["name"]
     assert data["email"] == partner_data["email"]
-    assert data["serviceable_zip_codes"] == partner_data["serviceable_zip_codes"]
+    assert data["servicable_locations"] == partner_data["servicable_locations"]
     assert data["max_handling_capacity"] == partner_data["max_handling_capacity"]
     assert "id" in data
     # Verify ID is a valid UUID
@@ -44,7 +44,7 @@ async def test_delivery_partner_login_success(client: AsyncClient, test_session:
         "name": "Login Test Partner",
         "email": "loginpartner@example.com",
         "password": "loginpassword123",
-        "serviceable_zip_codes": [20001],
+        "servicable_locations": [20001],
         "max_handling_capacity": 5
     }
     
@@ -108,7 +108,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
         "name": "Update Test Partner",
         "email": "updatepartner@example.com",
         "password": "password123",
-        "serviceable_zip_codes": [30001],
+        "servicable_locations": [30001],
         "max_handling_capacity": 8
     }
     
@@ -137,7 +137,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
     
     # Update partner
     update_data = {
-        "serviceable_zip_codes": [30001, 30002],
+        "servicable_locations": [30001, 30002],
         "max_handling_capacity": 12
     }
     
@@ -149,7 +149,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
     
     assert response.status_code == 200
     data = response.json()
-    assert data["serviceable_zip_codes"] == update_data["serviceable_zip_codes"]
+    assert data["servicable_locations"] == update_data["servicable_locations"]
     assert data["max_handling_capacity"] == update_data["max_handling_capacity"]
 
 
@@ -163,7 +163,7 @@ async def test_delivery_partner_logout(client: AsyncClient, test_session: AsyncS
         "name": "Logout Test Partner",
         "email": "logoutpartner@example.com",
         "password": "password123",
-        "serviceable_zip_codes": [40001],
+        "servicable_locations": [40001],
         "max_handling_capacity": 5
     }
     
@@ -212,7 +212,7 @@ async def test_delivery_partner_verify_email(client: AsyncClient, test_session: 
         "name": "Verify Test Partner",
         "email": "verifypartner@example.com",
         "password": "testpassword123",
-        "serviceable_zip_codes": [50001],
+        "servicable_locations": [50001],
         "max_handling_capacity": 5
     }
     
