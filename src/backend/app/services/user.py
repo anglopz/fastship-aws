@@ -19,6 +19,7 @@ from app.core.exceptions import (
     InvalidToken,
     ValidationError,
 )
+from app.core.security import hash_password, verify_password
 from app.database.models import User
 from app.utils import decode_url_safe_token, generate_access_token, generate_url_safe_token
 
@@ -33,11 +34,6 @@ try:
 except ImportError:
     CELERY_AVAILABLE = False
     logger.warning("Celery not available, falling back to BackgroundTasks")
-
-password_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-)
 
 
 class UserService(BaseService):
@@ -70,7 +66,7 @@ class UserService(BaseService):
         
         user = self.model(
             **data,
-            password_hash=password_context.hash(data["password"]),
+            password_hash=hash_password(data["password"]),
             email_verified=False,  # New users start unverified
         )
         
@@ -168,7 +164,7 @@ class UserService(BaseService):
         # Validate the credentials
         user = await self._get_by_email(email)
 
-        if user is None or not password_context.verify(
+        if user is None or not verify_password(
             password,
             user.password_hash,
         ):
@@ -263,7 +259,7 @@ class UserService(BaseService):
             return False
         
         # Update password hash
-        user.password_hash = password_context.hash(password)
+        user.password_hash = hash_password(password)
         await self._update(user)
         
         return True
