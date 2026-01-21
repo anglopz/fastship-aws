@@ -13,7 +13,7 @@ async def test_delivery_partner_signup(client: AsyncClient, test_session: AsyncS
     partner_data = {
         "name": "Test Partner",
         "email": "partner@example.com",
-        "password": "testpassword123",
+        "password": "testpass123",
         "servicable_locations": [10001, 10002, 10003],
         "max_handling_capacity": 10
     }
@@ -43,7 +43,7 @@ async def test_delivery_partner_login_success(client: AsyncClient, test_session:
     partner_data = {
         "name": "Login Test Partner",
         "email": "loginpartner@example.com",
-        "password": "loginpassword123",
+        "password": "loginpass123",
         "servicable_locations": [20001],
         "max_handling_capacity": 5
     }
@@ -211,7 +211,7 @@ async def test_delivery_partner_verify_email(client: AsyncClient, test_session: 
     partner_data = {
         "name": "Verify Test Partner",
         "email": "verifypartner@example.com",
-        "password": "testpassword123",
+        "password": "testpass123",
         "servicable_locations": [50001],
         "max_handling_capacity": 5
     }
