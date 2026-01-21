@@ -7,7 +7,6 @@ from typing import Optional
 from uuid import UUID
 
 # Phase 3: BackgroundTasks removed, using Celery as primary method
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
