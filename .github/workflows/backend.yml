@@ -26,7 +26,7 @@ jobs:
         postgresql-version: '15'
         postgresql-db: fastapi_db
         postgresql-user: postgres
-        postgresql-password: password
+        postgresql-password: postgres
     
     - name: Start Redis
       uses: supercharge/redis-github-action@1.5.0
