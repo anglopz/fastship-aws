@@ -18,7 +18,7 @@ async def test_delivery_partner_signup(client: AsyncClient, test_session: AsyncS
         "max_handling_capacity": 10
     }
     
-    response = await client.post("/partner/signup", json=partner_data)
+    response = await client.post("/api/v1/partner/signup", json=partner_data)
     
     assert response.status_code == 200
     data = response.json()
@@ -48,7 +48,7 @@ async def test_delivery_partner_login_success(client: AsyncClient, test_session:
         "max_handling_capacity": 5
     }
     
-    signup_response = await client.post("/partner/signup", json=partner_data)
+    signup_response = await client.post("/api/v1/partner/signup", json=partner_data)
     assert signup_response.status_code == 200
     
     # Phase 2: Verify email before login (enforcement enabled)
@@ -69,7 +69,7 @@ async def test_delivery_partner_login_success(client: AsyncClient, test_session:
     }
     
     response = await client.post(
-        "/partner/token",
+        "/api/v1/partner/token",
         data=login_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -92,7 +92,7 @@ async def test_delivery_partner_login_invalid_credentials(client: AsyncClient, t
     }
     
     response = await client.post(
-        "/partner/token",
+        "/api/v1/partner/token",
         data=login_data,
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -112,7 +112,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
         "max_handling_capacity": 8
     }
     
-    signup_response = await client.post("/partner/signup", json=partner_data)
+    signup_response = await client.post("/api/v1/partner/signup", json=partner_data)
     assert signup_response.status_code == 200
     
     # Phase 2: Verify email before login
@@ -128,7 +128,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
     
     # Login to get token
     login_response = await client.post(
-        "/partner/token",
+        "/api/v1/partner/token",
         data={"username": partner_data["email"], "password": partner_data["password"]},
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -142,7 +142,7 @@ async def test_delivery_partner_update(client: AsyncClient, test_session: AsyncS
     }
     
     response = await client.post(
-        "/partner/",
+        "/api/v1/partner/",
         json=update_data,
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -167,7 +167,7 @@ async def test_delivery_partner_logout(client: AsyncClient, test_session: AsyncS
         "max_handling_capacity": 5
     }
     
-    signup_response = await client.post("/partner/signup", json=partner_data)
+    signup_response = await client.post("/api/v1/partner/signup", json=partner_data)
     assert signup_response.status_code == 200
     
     # Phase 2: Verify email before login
@@ -182,7 +182,7 @@ async def test_delivery_partner_logout(client: AsyncClient, test_session: AsyncS
         await session.commit()
     
     login_response = await client.post(
-        "/partner/token",
+        "/api/v1/partner/token",
         data={"username": partner_data["email"], "password": partner_data["password"]},
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
@@ -191,7 +191,7 @@ async def test_delivery_partner_logout(client: AsyncClient, test_session: AsyncS
     
     # Logout
     response = await client.get(
-        "/partner/logout",
+        "/api/v1/partner/logout",
         headers={"Authorization": f"Bearer {token}"}
     )
     
@@ -216,7 +216,7 @@ async def test_delivery_partner_verify_email(client: AsyncClient, test_session: 
         "max_handling_capacity": 5
     }
     
-    signup_response = await client.post("/partner/signup", json=partner_data)
+    signup_response = await client.post("/api/v1/partner/signup", json=partner_data)
     assert signup_response.status_code == 200
     partner_id = signup_response.json()["id"]
     
@@ -225,7 +225,7 @@ async def test_delivery_partner_verify_email(client: AsyncClient, test_session: 
     token = generate_url_safe_token({"id": partner_id})
     
     # Verify email
-    response = await client.get(f"/partner/verify?token={token}")
+    response = await client.get(f"/api/v1/partner/verify?token={token}")
     assert response.status_code == 200
     data = response.json()
     assert "verified" in data.get("detail", "").lower()
