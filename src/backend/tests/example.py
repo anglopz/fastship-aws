@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.database.models import DeliveryPartner, Location, Seller
-from app.services.user import password_context
+from app.core.security import hash_password
 
 # Test data constants
 SELLER = {
