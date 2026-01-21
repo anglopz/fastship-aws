@@ -47,7 +47,7 @@ async def create_test_data(session: AsyncSession):
         name=SELLER["name"],
         email=SELLER["email"],
         email_verified=True,  # Pre-verified for testing
-        password_hash=password_context.hash(SELLER["password"]),
+        password_hash=hash_password(SELLER["password"]),
     )
     session.add(seller)
     
@@ -70,7 +70,7 @@ async def create_test_data(session: AsyncSession):
         name=DELIVERY_PARTNER["name"],
         email=DELIVERY_PARTNER["email"],
         email_verified=True,  # Pre-verified for testing
-        password_hash=password_context.hash(DELIVERY_PARTNER["password"]),
+        password_hash=hash_password(DELIVERY_PARTNER["password"]),
         max_handling_capacity=DELIVERY_PARTNER["max_handling_capacity"],
         servicable_locations=locations,  # Link via relationship
     )
