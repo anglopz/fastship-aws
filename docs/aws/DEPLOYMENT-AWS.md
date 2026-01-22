@@ -270,7 +270,14 @@ Configure the following secrets in your GitHub repository:
 4. **Update Terraform** with certificate ARNs:
    ```hcl
    # In terraform.tfvars
+   # ALB certificate (eu-west-1 region)
    acm_certificate_arn = "arn:aws:acm:eu-west-1:ACCOUNT:certificate/CERT-ID"
+   
+   # CloudFront certificate (us-east-1 region, required)
+   cloudfront_certificate_arn = "arn:aws:acm:us-east-1:ACCOUNT:certificate/CERT-ID"
+   
+   # CloudFront aliases (custom domains)
+   cloudfront_aliases = ["app.fastship-api.com", "fastship-api.com", "www.fastship-api.com"]
    ```
 
 5. **Apply Terraform** to add HTTPS listener and HTTP redirect:

@@ -34,6 +34,15 @@ domain_name = ""
 
 # ACM Certificate ARN for ALB HTTPS (eu-west-1 region, for api.fastship-api.com)
 # Get from: aws acm list-certificates --region eu-west-1 --query 'CertificateSummaryList[?DomainName==`api.fastship-api.com`].CertificateArn' --output text
-# Note: CloudFront uses a different certificate in us-east-1 (not configured here)
 # Value: arn:aws:acm:eu-west-1:337573345298:certificate/872b2b04-d0c4-432c-bbbd-e291df9afdd3
 acm_certificate_arn = ""
+
+# ACM Certificate ARN for CloudFront custom domain (us-east-1 region, for fastship-api.com and app.fastship-api.com)
+# Get from: aws acm list-certificates --region us-east-1 --query 'CertificateSummaryList[?DomainName==`fastship-api.com`].CertificateArn' --output text
+# Note: CloudFront certificates MUST be in us-east-1 region
+# Value: arn:aws:acm:us-east-1:337573345298:certificate/...
+cloudfront_certificate_arn = ""
+
+# CloudFront aliases (custom domains)
+# These should match the domains in the CloudFront certificate
+cloudfront_aliases = ["app.fastship-api.com", "fastship-api.com"]
