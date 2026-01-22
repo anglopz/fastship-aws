@@ -29,15 +29,20 @@ password_context = CryptContext(
 
 
 def _truncate_password(password: str) -> str:
-    """Truncate password to 72 bytes, ensuring bcrypt compatibility"""
+    """Truncate password to 71 bytes, ensuring bcrypt compatibility
+    
+    Note: bcrypt has a 72-byte limit, but some implementations are strict
+    and reject passwords that are exactly 72 bytes. We truncate to 71
+    bytes to be safe.
+    """
     if not isinstance(password, str):
         password = str(password)
     
     # Encode to bytes and truncate if necessary
     password_bytes = password.encode("utf-8")
-    if len(password_bytes) > 72:
-        # Truncate to exactly 72 bytes
-        password_bytes = password_bytes[:72]
+    if len(password_bytes) > 71:
+        # Truncate to exactly 71 bytes (safe limit for bcrypt)
+        password_bytes = password_bytes[:71]
         # Decode back to string
         try:
             password = password_bytes.decode("utf-8")
@@ -45,11 +50,11 @@ def _truncate_password(password: str) -> str:
             # If truncation breaks UTF-8 sequence, decode with error handling
             password = password_bytes.decode("utf-8", errors="ignore")
     
-    # Double-check: ensure final encoded length is <= 72
+    # Double-check: ensure final encoded length is <= 71
     final_bytes = password.encode("utf-8")
-    if len(final_bytes) > 72:
+    if len(final_bytes) > 71:
         # This should rarely happen, but truncate again if needed
-        password = final_bytes[:72].decode("utf-8", errors="ignore")
+        password = final_bytes[:71].decode("utf-8", errors="ignore")
     
     return password
 
@@ -75,18 +80,18 @@ def hash_password(password: str) -> str:
     
     # Verify final byte length is safe before calling bcrypt
     final_check = password.encode("utf-8")
-    if len(final_check) > 72:
+    if len(final_check) > 71:
         # Emergency truncation - should never happen, but safety check
-        password = final_check[:72].decode("utf-8", errors="ignore")
+        password = final_check[:71].decode("utf-8", errors="ignore")
     
     # Hash using passlib/bcrypt
     # At this point, password is guaranteed to be <= 72 bytes when encoded
     try:
         return password_context.hash(password)
     except ValueError as e:
-        if "72 bytes" in str(e):
+        if "72 bytes" in str(e) or "longer than" in str(e).lower():
             # Final safety: if somehow we still get the error, truncate and retry
-            password_bytes = password.encode("utf-8")[:72]
+            password_bytes = password.encode("utf-8")[:71]
             password = password_bytes.decode("utf-8", errors="ignore")
             return password_context.hash(password)
         raise
@@ -103,16 +108,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     
     # Verify final byte length is safe
     final_check = plain_password.encode("utf-8")
-    if len(final_check) > 72:
-        plain_password = final_check[:72].decode("utf-8", errors="ignore")
+    if len(final_check) > 71:
+        plain_password = final_check[:71].decode("utf-8", errors="ignore")
     
     # Verify using passlib/bcrypt
     try:
         return password_context.verify(plain_password, hashed_password)
     except ValueError as e:
-        if "72 bytes" in str(e):
+        if "72 bytes" in str(e) or "longer than" in str(e).lower():
             # Final safety: if somehow we still get the error, truncate and retry
-            password_bytes = plain_password.encode("utf-8")[:72]
+            password_bytes = plain_password.encode("utf-8")[:71]
             plain_password = password_bytes.decode("utf-8", errors="ignore")
             return password_context.verify(plain_password, hashed_password)
         raise
