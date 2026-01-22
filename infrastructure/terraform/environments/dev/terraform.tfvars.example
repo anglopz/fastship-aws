@@ -11,7 +11,11 @@ db_password   = "change-me-secure-password"
 
 redis_auth_token = "change-me-redis-token"
 
-backend_image = "123456789012.dkr.ecr.eu-west-1.amazonaws.com/fastship-backend:latest"
+# ECR Image
+# IMPORTANT: Use specific commit SHA tag instead of :latest to ensure correct image version
+# Get latest image tag from: aws ecr describe-images --repository-name fastship-backend --region eu-west-1 --image-ids imageTag=latest --query 'imageDetails[0].imageTags[?contains(@, `latest`) == `false`] | [0]' --output text
+# Example: backend_image = "337573345298.dkr.ecr.eu-west-1.amazonaws.com/fastship-backend:014137e46af3c8bd4dec701e35247633c68148e0"
+backend_image = "337573345298.dkr.ecr.eu-west-1.amazonaws.com/fastship-backend:latest"
 
 instance_class       = "db.t3.micro"
 rds_allocated_storage = 20
