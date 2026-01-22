@@ -79,6 +79,24 @@ jobs:
             echo "cloudfront_certificate_arn = \"${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}\"" >> terraform.tfvars
           fi
         fi
+        if [ -n "${{ secrets.MAILTRAP_USERNAME }}" ]; then
+          # Update or add mailtrap_username
+          if grep -q "mailtrap_username" terraform.tfvars; then
+            MAILTRAP_USER_ESCAPED=$(echo "${{ secrets.MAILTRAP_USERNAME }}" | sed 's/[[\.*^$()+?{|]/\\&/g')
+            sed -i "s|mailtrap_username = .*|mailtrap_username = \"$MAILTRAP_USER_ESCAPED\"|" terraform.tfvars
+          else
+            echo "mailtrap_username = \"${{ secrets.MAILTRAP_USERNAME }}\"" >> terraform.tfvars
+          fi
+        fi
+        if [ -n "${{ secrets.MAILTRAP_PASSWORD }}" ]; then
+          # Update or add mailtrap_password
+          if grep -q "mailtrap_password" terraform.tfvars; then
+            MAILTRAP_PASS_ESCAPED=$(echo "${{ secrets.MAILTRAP_PASSWORD }}" | sed 's/[[\.*^$()+?{|]/\\&/g')
+            sed -i "s|mailtrap_password = .*|mailtrap_password = \"$MAILTRAP_PASS_ESCAPED\"|" terraform.tfvars
+          else
+            echo "mailtrap_password = \"${{ secrets.MAILTRAP_PASSWORD }}\"" >> terraform.tfvars
+          fi
+        fi
     
     - name: Terraform Plan
       run: terraform plan -var-file=terraform.tfvars
