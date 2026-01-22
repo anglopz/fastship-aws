@@ -69,8 +69,9 @@ resource "aws_cloudfront_distribution" "frontend" {
   http_version        = "http2and3"  # HTTP/2 and HTTP/3
   price_class         = "PriceClass_100"  # Use only North America and Europe
   
-  # Custom domain aliases (must match certificate domains)
-  aliases = var.cloudfront_aliases
+  # Custom domain aliases (only set if certificate is provided)
+  # CloudFront requires a certificate to be attached when using custom domains
+  aliases = var.cloudfront_certificate_arn != "" ? var.cloudfront_aliases : []
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
