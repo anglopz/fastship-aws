@@ -1,12 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlmodel import SQLModel
 
-from app.config import settings
+from app.config import db_settings
 
 
 # Create a database engine to connect with database
 engine = create_async_engine(
-    url=settings.POSTGRES_URL,
+    url=db_settings.POSTGRES_URL,
     echo=True,
 )
 
