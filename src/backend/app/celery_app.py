@@ -26,12 +26,14 @@ def get_fastmail():
     global _fastmail_instance
     # Always recreate to pick up new configuration
     # This ensures we get the latest mail settings after restart
+    # Use get_smtp_config() to get correct credentials based on EMAIL_MODE
+    smtp_config = mail_settings.get_smtp_config()
     config = ConnectionConfig(
-        MAIL_USERNAME=mail_settings.MAIL_USERNAME,
-        MAIL_PASSWORD=mail_settings.MAIL_PASSWORD,
+        MAIL_USERNAME=smtp_config["MAIL_USERNAME"],
+        MAIL_PASSWORD=smtp_config["MAIL_PASSWORD"],
         MAIL_FROM=mail_settings.MAIL_FROM,
-        MAIL_PORT=mail_settings.MAIL_PORT,
-        MAIL_SERVER=mail_settings.MAIL_SERVER,
+        MAIL_PORT=smtp_config["MAIL_PORT"],
+        MAIL_SERVER=smtp_config["MAIL_SERVER"],
         MAIL_FROM_NAME=mail_settings.MAIL_FROM_NAME,
         MAIL_STARTTLS=mail_settings.MAIL_STARTTLS,
         MAIL_SSL_TLS=mail_settings.MAIL_SSL_TLS,
@@ -40,7 +42,7 @@ def get_fastmail():
         TEMPLATE_FOLDER=str(TEMPLATE_DIR),
     )
     _fastmail_instance = FastMail(config)
-    logger.info(f"FastMail configured for {mail_settings.MAIL_SERVER}:{mail_settings.MAIL_PORT}")
+    logger.info(f"FastMail configured for {smtp_config['MAIL_SERVER']}:{smtp_config['MAIL_PORT']} (mode: {mail_settings.EMAIL_MODE})")
     return _fastmail_instance
 
 

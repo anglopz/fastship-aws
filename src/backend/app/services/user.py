@@ -95,7 +95,9 @@ class UserService(BaseService):
             token = generate_url_safe_token({"id": str(user.id)})
             # Remove leading slash from router_prefix if present to avoid double slashes
             router_prefix_clean = router_prefix.lstrip('/')
-            verification_url = f"http://{app_settings.APP_DOMAIN}/{router_prefix_clean}/verify?token={token}"
+            # Use HTTPS for production (AWS), HTTP for localhost
+            protocol = "https" if "localhost" not in app_settings.APP_DOMAIN else "http"
+            verification_url = f"{protocol}://{app_settings.APP_DOMAIN}/{router_prefix_clean}/verify?token={token}"
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
@@ -206,7 +208,9 @@ class UserService(BaseService):
             token = generate_url_safe_token({"id": str(user.id)}, salt="password-reset")
             # Remove leading slash from router_prefix if present to avoid double slashes
             router_prefix_clean = router_prefix.lstrip('/')
-            reset_url = f"http://{app_settings.APP_DOMAIN}/{router_prefix_clean}/reset_password_form?token={token}"
+            # Use HTTPS for production (AWS), HTTP for localhost
+            protocol = "https" if "localhost" not in app_settings.APP_DOMAIN else "http"
+            reset_url = f"{protocol}://{app_settings.APP_DOMAIN}/{router_prefix_clean}/reset_password_form?token={token}"
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
