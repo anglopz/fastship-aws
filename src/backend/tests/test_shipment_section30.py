@@ -4,6 +4,7 @@ Section 30: API Testing Integration - Demonstration
 """
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import test data - use relative import
 from . import example
@@ -24,12 +25,16 @@ async def test_submit_shipment_auth(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_submit_shipment(client_with_seller_auth: AsyncClient):
+async def test_submit_shipment(client_with_seller_auth: AsyncClient, test_session: AsyncSession):
     """
     Test shipment creation with authenticated seller.
     
     Section 30: Using client_with_seller_auth fixture for pre-authenticated requests.
     """
+    # Ensure test data (delivery partner) exists
+    async with test_session() as session:
+        await example.create_test_data(session)
+    
     # Submit Shipment using example data
     response = await client_with_seller_auth.post(
         "/api/v1/shipment/",
@@ -58,12 +63,16 @@ async def test_submit_shipment(client_with_seller_auth: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_submit_shipment_with_token(client: AsyncClient, seller_token: str):
+async def test_submit_shipment_with_token(client: AsyncClient, seller_token: str, test_session: AsyncSession):
     """
     Test shipment creation using seller_token fixture.
     
     Section 30: Using seller_token fixture for manual token usage.
     """
+    # Ensure test data (delivery partner) exists
+    async with test_session() as session:
+        await example.create_test_data(session)
+    
     response = await client.post(
         "/api/v1/shipment/",
         json=example.SHIPMENT,
@@ -77,12 +86,16 @@ async def test_submit_shipment_with_token(client: AsyncClient, seller_token: str
 
 
 @pytest.mark.asyncio
-async def test_get_shipment_public(client: AsyncClient, seller_token: str):
+async def test_get_shipment_public(client: AsyncClient, seller_token: str, test_session: AsyncSession):
     """
     Test that shipment retrieval is public (no auth required).
     
     Section 30: Demonstrates public endpoint testing.
     """
+    # Ensure test data (delivery partner) exists
+    async with test_session() as session:
+        await example.create_test_data(session)
+    
     # First create a shipment
     create_response = await client.post(
         "/api/v1/shipment/",
