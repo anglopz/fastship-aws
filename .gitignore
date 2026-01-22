@@ -38,6 +38,9 @@ htmlcov/
 .pytest_cache/
 .mypy_cache/
 
+# Debug scripts (keep local only)
+src/backend/test_password_debug.py
+
 # Docker
 data/
 .cursor/
