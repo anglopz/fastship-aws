@@ -45,4 +45,4 @@ cloudfront_certificate_arn = ""
 
 # CloudFront aliases (custom domains)
 # These should match the domains in the CloudFront certificate
-cloudfront_aliases = ["app.fastship-api.com", "fastship-api.com"]
+cloudfront_aliases = ["app.fastship-api.com", "fastship-api.com", "www.fastship-api.com"]

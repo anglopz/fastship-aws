@@ -69,6 +69,16 @@ jobs:
         if [ -n "${{ secrets.BACKEND_IMAGE }}" ]; then
           sed -i "s|backend_image = .*|backend_image = \"${{ secrets.BACKEND_IMAGE }}\"|" terraform.tfvars
         fi
+        if [ -n "${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}" ]; then
+          # Update or add cloudfront_certificate_arn
+          if grep -q "cloudfront_certificate_arn" terraform.tfvars; then
+            # Escape special characters for sed
+            CLOUDFRONT_CERT_ESCAPED=$(echo "${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}" | sed 's/[[\.*^$()+?{|]/\\&/g')
+            sed -i "s|cloudfront_certificate_arn = .*|cloudfront_certificate_arn = \"$CLOUDFRONT_CERT_ESCAPED\"|" terraform.tfvars
+          else
+            echo "cloudfront_certificate_arn = \"${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}\"" >> terraform.tfvars
+          fi
+        fi
     
     - name: Terraform Plan
       run: terraform plan -var-file=terraform.tfvars
