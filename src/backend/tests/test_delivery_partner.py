@@ -78,8 +78,8 @@ async def test_delivery_partner_login_success(client: AsyncClient, test_session:
     data = response.json()
     
     assert "access_token" in data
-    assert "type" in data
-    assert data["type"] == "jwt"
+    assert "token_type" in data
+    assert data["token_type"] == "bearer"
     assert len(data["access_token"]) > 0
 
 

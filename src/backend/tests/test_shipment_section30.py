@@ -17,7 +17,7 @@ async def test_submit_shipment_auth(client: AsyncClient):
     Section 30: Using new fixtures and example data.
     """
     response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json={},
     )
     assert response.status_code == 401
@@ -32,7 +32,7 @@ async def test_submit_shipment(client_with_seller_auth: AsyncClient):
     """
     # Submit Shipment using example data
     response = await client_with_seller_auth.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=example.SHIPMENT,
     )
     
@@ -46,7 +46,7 @@ async def test_submit_shipment(client_with_seller_auth: AsyncClient):
     # Get Shipment
     shipment_id = data["id"]
     response = await client_with_seller_auth.get(
-        "/shipment/",
+        "/api/v1/shipment/",
         params={"id": shipment_id},
     )
     
@@ -65,7 +65,7 @@ async def test_submit_shipment_with_token(client: AsyncClient, seller_token: str
     Section 30: Using seller_token fixture for manual token usage.
     """
     response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=example.SHIPMENT,
         headers={"Authorization": f"Bearer {seller_token}"},
     )
@@ -85,7 +85,7 @@ async def test_get_shipment_public(client: AsyncClient, seller_token: str):
     """
     # First create a shipment
     create_response = await client.post(
-        "/shipment/",
+        "/api/v1/shipment/",
         json=example.SHIPMENT,
         headers={"Authorization": f"Bearer {seller_token}"},
     )
@@ -94,7 +94,7 @@ async def test_get_shipment_public(client: AsyncClient, seller_token: str):
     
     # Get shipment without authentication (public endpoint)
     response = await client.get(
-        "/shipment/",
+        "/api/v1/shipment/",
         params={"id": shipment_id},
     )
     
