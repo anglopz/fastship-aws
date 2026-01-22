@@ -526,21 +526,14 @@ def get_scalar_docs():
 # Note: /api/v1/health is provided by the health router
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with Redis status (root level for backward compatibility)
+    """Health check endpoint for ALB (root level for backward compatibility)
     
-    Optimized for ALB health checks - Redis check is non-blocking with timeout.
+    Optimized for ALB health checks - responds immediately without blocking on Redis.
+    ALB health checks need fast responses (< 10s timeout).
     """
-    import asyncio
-    redis_status = "disconnected"
-    try:
-        # Use asyncio.wait_for to timeout Redis ping quickly (1 second max)
-        redis_client = await get_redis()
-        await asyncio.wait_for(redis_client.ping(), timeout=1.0)
-        redis_status = "connected"
-    except (Exception, asyncio.TimeoutError):
-        redis_status = "disconnected"
-
-    return {"status": "healthy", "redis": redis_status, "service": "FastAPI Backend"}
+    # Return immediately - don't check Redis to avoid timeouts
+    # Redis connectivity is checked in /api/v1/health endpoint
+    return {"status": "healthy", "service": "FastAPI Backend"}
 
 
 ### Test Redis Endpoint
