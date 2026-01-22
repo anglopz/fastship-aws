@@ -65,9 +65,12 @@ class DatabaseSettings(BaseSettings):
         encoded_password = quote_plus(self.POSTGRES_PASSWORD)
         encoded_user = quote_plus(self.POSTGRES_USER) if self.POSTGRES_USER else self.POSTGRES_USER
         
+        # Add SSL mode for RDS connections (required by AWS RDS)
+        # Use 'require' for RDS - it will use SSL if available, otherwise fallback
+        ssl_mode = "?sslmode=require"
         return (
             f"postgresql+asyncpg://{encoded_user}:{encoded_password}@"
-            f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}{ssl_mode}"
         )
     
     def get_redis_connection_params(self) -> dict:
