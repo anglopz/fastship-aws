@@ -51,13 +51,19 @@ class DatabaseSettings(BaseSettings):
         """
         if self.DATABASE_URL:
             # Convert postgresql:// to postgresql+asyncpg:// if needed
-            if self.DATABASE_URL.startswith("postgresql://"):
-                return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-            elif self.DATABASE_URL.startswith("postgresql+asyncpg://"):
-                return self.DATABASE_URL
-            else:
+            url = self.DATABASE_URL
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif not url.startswith("postgresql+asyncpg://"):
                 # Already in correct format or needs conversion
-                return self.DATABASE_URL
+                pass
+            
+            # Add SSL mode if not already present (required for AWS RDS)
+            if "sslmode=" not in url:
+                separator = "?" if "?" not in url else "&"
+                url = f"{url}{separator}sslmode=require"
+            
+            return url
         
         # Build from individual settings with URL-encoded password
         # This prevents ConfigParser interpolation issues with special characters like %
