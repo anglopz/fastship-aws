@@ -171,3 +171,17 @@ variable "cloudfront_aliases" {
   type        = list(string)
   default     = []
 }
+
+variable "mailtrap_username" {
+  description = "Mailtrap username for email sandbox testing"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "mailtrap_password" {
+  description = "Mailtrap password for email sandbox testing"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

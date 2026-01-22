@@ -135,6 +135,39 @@ module "ecs" {
     {
       name  = "REDIS_URL"
       value = "redis://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}"
+    },
+    # Email configuration - Mailtrap sandbox
+    {
+      name  = "EMAIL_MODE"
+      value = "sandbox"
+    },
+    {
+      name  = "MAILTRAP_USERNAME"
+      value = var.mailtrap_username
+    },
+    {
+      name  = "MAILTRAP_PASSWORD"
+      value = var.mailtrap_password
+    },
+    {
+      name  = "MAIL_FROM"
+      value = "noreply@fastship-api.com"
+    },
+    {
+      name  = "MAIL_FROM_NAME"
+      value = "FastShip"
+    },
+    {
+      name  = "APP_DOMAIN"
+      value = "api.fastship-api.com"
+    },
+    {
+      name  = "FRONTEND_URL"
+      value = "https://app.fastship-api.com"
+    },
+    {
+      name  = "CORS_ORIGINS"
+      value = "https://app.fastship-api.com,https://fastship-api.com,https://www.fastship-api.com,http://localhost:3000,http://localhost:5173"
     }
   ]
 }
