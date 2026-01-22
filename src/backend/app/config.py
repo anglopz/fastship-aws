@@ -58,10 +58,14 @@ class DatabaseSettings(BaseSettings):
                 # Already in correct format or needs conversion
                 pass
             
-            # Add SSL mode if not already present (required for AWS RDS)
-            if "sslmode=" not in url:
+            # Add SSL if not already present (required for AWS RDS)
+            # asyncpg uses 'ssl=require' parameter, not 'sslmode'
+            if "ssl=" not in url and "sslmode=" not in url:
                 separator = "?" if "?" not in url else "&"
-                url = f"{url}{separator}sslmode=require"
+                url = f"{url}{separator}ssl=require"
+            # Convert sslmode to ssl for asyncpg compatibility
+            elif "sslmode=" in url:
+                url = url.replace("sslmode=require", "ssl=require").replace("sslmode=prefer", "ssl=prefer")
             
             return url
         
