@@ -529,23 +529,14 @@ async def health_check():
     """Health check endpoint for ALB (root level for backward compatibility)
     
     Industry standard: Fast health checks that don't block on dependencies.
-    - Always returns 200 OK (app is alive and can serve requests)
-    - Checks Redis with short timeout (0.5s) but doesn't fail if Redis is down
-    - ALB health checks need fast responses (< 10s timeout)
+    - Always returns 200 OK immediately (app is alive)
+    - No Redis check to ensure sub-second response for ALB
+    - Redis status available at /api/v1/health for detailed monitoring
+    - ALB health checks need fast responses (< 1 second ideally)
     """
-    import asyncio
-    redis_status = "unknown"
-    try:
-        # Check Redis with very short timeout (0.5s) to avoid blocking
-        redis_client = await get_redis()
-        await asyncio.wait_for(redis_client.ping(), timeout=0.5)
-        redis_status = "connected"
-    except (Exception, asyncio.TimeoutError):
-        # Redis unavailable - app can still serve requests (just without caching)
-        redis_status = "disconnected"
-    
-    # Always return 200 OK - app is healthy even if Redis is down
-    return {"status": "healthy", "redis": redis_status, "service": "FastAPI Backend"}
+    # Return immediately without any external dependencies
+    # This ensures ALB health checks are fast and reliable
+    return {"status": "healthy", "service": "FastAPI Backend"}
 
 
 ### Test Redis Endpoint
