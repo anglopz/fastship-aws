@@ -64,12 +64,12 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "${var.project_name}-${var.environment} frontend"
+  comment             = "fastship-dev frontend"
   default_root_object = "index.html"
-  http_version        = "http2and3"  # Match actual distribution setting
-  price_class         = "PriceClass_100"  # US, Canada, Europe (cheaper than All)
+  http_version        = "http2and3"  # HTTP/2 and HTTP/3
+  price_class         = "PriceClass_100"  # Use only North America and Europe
   
-  # Custom domain aliases (if provided)
+  # Custom domain aliases (must match certificate domains)
   aliases = var.cloudfront_aliases
 
   origin {
