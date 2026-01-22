@@ -167,7 +167,8 @@ class LoggingSettings(BaseSettings):
 class CORSSettings(BaseSettings):
     """CORS configuration settings"""
     # Comma-separated list of allowed origins
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    # Includes localhost for development and production frontend URLs
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173,https://app.fastship-api.com,https://fastship-api.com,https://www.fastship-api.com"
     
     @property
     def allowed_origins(self) -> list[str]:

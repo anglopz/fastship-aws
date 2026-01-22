@@ -149,8 +149,8 @@ app = FastAPI(
             "description": "Development server",
         },
         {
-            "url": "https://api.fastship.com",
-            "description": "Production server",
+            "url": "https://api.fastship-api.com",
+            "description": "Production server (AWS)",
         },
     ],
     terms_of_service="https://fastship.com/terms",
