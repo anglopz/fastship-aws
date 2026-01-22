@@ -84,10 +84,17 @@ jobs:
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
     
-    - name: Update ECS service
+    - name: Update ECS services
       run: |
+        # Update API service
         aws ecs update-service \
           --cluster dev-fastship-cluster \
           --service dev-api \
+          --force-new-deployment \
+          --region eu-west-1
+        # Update Celery worker service
+        aws ecs update-service \
+          --cluster dev-fastship-cluster \
+          --service dev-celery-worker \
           --force-new-deployment \
           --region eu-west-1
