@@ -66,6 +66,8 @@ resource "aws_cloudfront_distribution" "frontend" {
   is_ipv6_enabled     = true
   comment             = "${var.project_name}-${var.environment} frontend"
   default_root_object = "index.html"
+  http_version        = "http2and3"  # Match actual distribution setting
+  price_class         = "PriceClass_100"  # US, Canada, Europe (cheaper than All)
   
   # Custom domain aliases (if provided)
   aliases = var.cloudfront_aliases
