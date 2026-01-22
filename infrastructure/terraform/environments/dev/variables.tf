@@ -155,7 +155,19 @@ variable "domain_name" {
 }
 
 variable "acm_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS listener (must be in us-east-1 for ALB). Leave empty if not using HTTPS yet."
+  description = "ACM certificate ARN for HTTPS listener (must be in eu-west-1 for ALB). Leave empty if not using HTTPS yet."
   type        = string
   default     = ""
+}
+
+variable "cloudfront_certificate_arn" {
+  description = "ACM certificate ARN for CloudFront custom domain (must be in us-east-1). Leave empty to use default certificate."
+  type        = string
+  default     = ""
+}
+
+variable "cloudfront_aliases" {
+  description = "List of aliases (custom domains) for CloudFront distribution (e.g., ['app.fastship-api.com', 'fastship-api.com'])"
+  type        = list(string)
+  default     = []
 }

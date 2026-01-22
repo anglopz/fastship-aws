@@ -142,6 +142,8 @@ module "ecs" {
 module "frontend" {
   source = "../../modules/frontend"
 
-  project_name = "fastship"
-  environment  = local.environment
+  project_name              = "fastship"
+  environment               = local.environment
+  cloudfront_certificate_arn = var.cloudfront_certificate_arn
+  cloudfront_aliases        = var.cloudfront_aliases
 }

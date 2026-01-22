@@ -66,6 +66,9 @@ resource "aws_cloudfront_distribution" "frontend" {
   is_ipv6_enabled     = true
   comment             = "${var.project_name}-${var.environment} frontend"
   default_root_object = "index.html"
+  
+  # Custom domain aliases (if provided)
+  aliases = var.cloudfront_aliases
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -111,7 +114,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    # Use custom certificate if provided, otherwise use default
+    acm_certificate_arn      = var.cloudfront_certificate_arn != "" ? var.cloudfront_certificate_arn : null
+    ssl_support_method       = var.cloudfront_certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version = var.cloudfront_certificate_arn != "" ? "TLSv1.2_2021" : null
+    cloudfront_default_certificate = var.cloudfront_certificate_arn == "" ? true : false
   }
 
   tags = {
