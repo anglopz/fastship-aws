@@ -534,6 +534,9 @@ async def health_check():
     - Redis status available at /api/v1/health for detailed monitoring
     - ALB health checks need fast responses (< 1 second ideally)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Health check endpoint called")
     # Return immediately without any external dependencies
     # This ensures ALB health checks are fast and reliable
     return {"status": "healthy", "service": "FastAPI Backend"}
