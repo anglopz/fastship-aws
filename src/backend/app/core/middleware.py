@@ -24,12 +24,15 @@ def _get_log_request_task():
     global CELERY_AVAILABLE, _log_request_task
     if _log_request_task is None:
         try:
+            # Import with minimal overhead - if this hangs, we'll catch it
             from app.celery_app import log_request_task
             _log_request_task = log_request_task
             CELERY_AVAILABLE = True
         except (ImportError, Exception) as e:
             CELERY_AVAILABLE = False
-            logging.warning(f"Celery not available for async logging: {e}, using sync logging")
+            # Silently fail - don't log to avoid blocking
+            # If Celery is unavailable, we'll use sync logging
+            pass
     return _log_request_task
 
 logger = logging.getLogger(__name__)
@@ -48,6 +51,7 @@ async def request_logging_middleware(request: Request, call_next) -> Response:
     - Logs request details (method, URL, status code, duration)
     - Uses Celery for async logging (if available)
     - Phase 3: Adds request ID tracking for better traceability
+    - SKIPS Celery logging for health endpoints to ensure fast responses
     
     Args:
         request: FastAPI Request object
@@ -79,6 +83,19 @@ async def request_logging_middleware(request: Request, call_next) -> Response:
     status_code = response.status_code
     client_ip = request.client.host if request.client else "unknown"
     
+    # CRITICAL: Skip Celery logging for health endpoints to prevent blocking
+    # Health checks must be fast and not depend on external services
+    is_health_endpoint = url.endswith('/health') or '/health' in url
+    
+    if is_health_endpoint:
+        # For health endpoints, use minimal sync logging or skip entirely
+        try:
+            logger.info(f"Health check: {method} {url} ({status_code}) {time_taken}s")
+        except Exception:
+            pass  # Don't block health checks
+        # Return early - no Celery logging for health checks
+        return response
+    
     # Phase 3: Enhanced log message with request ID and IP
     # Section 27 format: {method} {url} ({status_code}) {time_taken} s
     # Enhanced format: {method} {url} ({status_code}) {time_taken} s [request_id={id}] [ip={ip}]
@@ -86,27 +103,30 @@ async def request_logging_middleware(request: Request, call_next) -> Response:
     
     # Log asynchronously via Celery (if available)
     # Use fire-and-forget pattern to prevent blocking if Celery/Redis is unavailable
-    log_task = _get_log_request_task()
-    if log_task and CELERY_AVAILABLE:
-        try:
-            # Use apply_async with ignore_result=True for true fire-and-forget
-            # This prevents blocking if Redis connection is slow or unavailable
-            log_task.apply_async(
-                args=[log_message],
-                ignore_result=True,
-                expires=300  # Expire task after 5 minutes if not processed
-            )
-        except Exception as e:
-            # Fallback to sync logging if Celery fails
-            # Don't let logging failures block the response
+    # Only try Celery if it's already been successfully imported
+    if CELERY_AVAILABLE:
+        log_task = _get_log_request_task()
+        if log_task:
             try:
-                logger.warning(f"Failed to queue log via Celery: {e}, using sync logging")
+                # Use apply_async with ignore_result=True for true fire-and-forget
+                # This prevents blocking if Redis connection is slow or unavailable
+                log_task.apply_async(
+                    args=[log_message],
+                    ignore_result=True,
+                    expires=300  # Expire task after 5 minutes if not processed
+                )
             except Exception:
-                pass  # Even sync logging can fail, don't block
+                # Silently fall back to sync logging - don't block response
+                try:
+                    _log_request_sync(log_message)
+                except Exception:
+                    pass  # Don't block response if logging fails
+        else:
+            # Celery not available, use sync logging
             try:
                 _log_request_sync(log_message)
             except Exception:
-                pass  # Don't block response if logging fails
+                pass
     else:
         # Fallback to sync logging
         try:
