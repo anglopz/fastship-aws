@@ -251,6 +251,33 @@ aws cloudwatch get-metric-statistics \
 4. **Exit Code 137**: Indicates OOM - but first check for configuration mismatches
 5. **Cost Efficiency**: Portfolio apps don't need production-level resources initially
 
+### Additional Fix: Container Health Check
+
+**Issue**: Tasks failing ALB health checks even after configuration alignment.
+
+**Root Cause**: No container health check configured in ECS task definition. ECS couldn't determine container health independently.
+
+**Solution**: Added container health check to task definition.
+
+**File**: `infrastructure/terraform/modules/ecs/main.tf`
+
+```hcl
+healthCheck = {
+  command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+  interval    = 30
+  timeout     = 5
+  retries     = 3
+  startPeriod = 60  # Grace period for app startup (60 seconds)
+}
+```
+
+**Rationale**:
+- ECS can monitor container health independently of ALB
+- 60-second start period allows app to fully initialize
+- Works alongside ALB health checks for better reliability
+- Provides visibility into container health status
+
 ### Related Commits
 
-- **Commit**: TBD - "Fix: Align ECS task configuration between terraform.tfvars and task definition"
+- **Commit**: `c7ff936` - "Fix: Align ECS task configuration between terraform.tfvars and task definition"
+- **Commit**: `5a1f2eb` - "Add container health check to ECS task definition"
