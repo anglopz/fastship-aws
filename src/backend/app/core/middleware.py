@@ -15,12 +15,22 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import logging_settings
 
 # Try to import Celery task (optional - fallback to sync logging if not available)
-try:
-    from app.celery_app import log_request_task
-    CELERY_AVAILABLE = True
-except ImportError:
-    CELERY_AVAILABLE = False
-    logging.warning("Celery not available for async logging, using sync logging")
+# Use lazy import to prevent blocking if Celery/Redis is unavailable at startup
+CELERY_AVAILABLE = False
+_log_request_task = None
+
+def _get_log_request_task():
+    """Lazy import of Celery task to prevent blocking at module load time"""
+    global CELERY_AVAILABLE, _log_request_task
+    if _log_request_task is None:
+        try:
+            from app.celery_app import log_request_task
+            _log_request_task = log_request_task
+            CELERY_AVAILABLE = True
+        except (ImportError, Exception) as e:
+            CELERY_AVAILABLE = False
+            logging.warning(f"Celery not available for async logging: {e}, using sync logging")
+    return _log_request_task
 
 logger = logging.getLogger(__name__)
 
@@ -75,16 +85,34 @@ async def request_logging_middleware(request: Request, call_next) -> Response:
     log_message = f"{method} {url} ({status_code}) {time_taken} s [request_id={request_id}] [ip={client_ip}]"
     
     # Log asynchronously via Celery (if available)
-    if CELERY_AVAILABLE:
+    # Use fire-and-forget pattern to prevent blocking if Celery/Redis is unavailable
+    log_task = _get_log_request_task()
+    if log_task and CELERY_AVAILABLE:
         try:
-            log_request_task.delay(log_message)
+            # Use apply_async with ignore_result=True for true fire-and-forget
+            # This prevents blocking if Redis connection is slow or unavailable
+            log_task.apply_async(
+                args=[log_message],
+                ignore_result=True,
+                expires=300  # Expire task after 5 minutes if not processed
+            )
         except Exception as e:
             # Fallback to sync logging if Celery fails
-            logger.warning(f"Failed to queue log via Celery: {e}, using sync logging")
-            _log_request_sync(log_message)
+            # Don't let logging failures block the response
+            try:
+                logger.warning(f"Failed to queue log via Celery: {e}, using sync logging")
+            except Exception:
+                pass  # Even sync logging can fail, don't block
+            try:
+                _log_request_sync(log_message)
+            except Exception:
+                pass  # Don't block response if logging fails
     else:
         # Fallback to sync logging
-        _log_request_sync(log_message)
+        try:
+            _log_request_sync(log_message)
+        except Exception:
+            pass  # Don't block response if logging fails
     
     return response
 

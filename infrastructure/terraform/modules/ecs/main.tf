@@ -21,8 +21,9 @@ resource "aws_ecs_task_definition" "api" {
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
-    name  = "api"
-    image = var.backend_image
+    name      = "api"
+    image     = var.backend_image
+    essential = true  # Mark container as essential to ensure proper port binding
 
     portMappings = [{
       containerPort = 8000
@@ -32,12 +33,17 @@ resource "aws_ecs_task_definition" "api" {
 
     # Container health check for ECS
     # This helps ECS determine container health independently of ALB health checks
+    # Industry standard: Start period should cover initialization time (migrations, DB connections)
     healthCheck = {
       command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval    = 30
-      timeout     = 5
-      retries     = 3
-      startPeriod = 60  # Grace period for app startup (60 seconds)
+      interval    = 30  # Check every 30 seconds
+      timeout     = 10  # Increased from 5 to 10 seconds (per Amazon Q recommendation)
+      retries     = 5   # Increased from 3 to 5 (per Amazon Q recommendation for more tolerance)
+      # Start period: 120 seconds grace period for app initialization
+      # - During this period, failed checks don't count toward unhealthy status
+      # - Allows time for: database migrations, connection establishment, app warmup
+      # - Aligned with service health check grace period (300s) for consistency
+      startPeriod = 120
     }
 
     environment = var.container_environment
@@ -110,6 +116,13 @@ resource "aws_ecs_service" "api" {
     container_name   = "api"
     container_port   = 8000
   }
+
+  # Health check grace period: 300 seconds (5 minutes)
+  # Industry standard: Allows time for application initialization before ALB health checks start counting
+  # - Prevents premature task termination during startup
+  # - Gives app time to complete migrations, DB connections, and warmup
+  # - Aligned with container health check start period (120s) + buffer
+  health_check_grace_period_seconds = 300
 
   depends_on = [aws_iam_role_policy_attachment.ecs_execution]
 }
@@ -189,4 +202,27 @@ resource "aws_iam_role" "ecs_task" {
   tags = {
     Name = "${var.environment}-fastship-ecs-task-role"
   }
+}
+
+# IAM policy for ECS Exec (SSM Session Manager)
+# Required for aws ecs execute-command to work
+resource "aws_iam_role_policy" "ecs_task_exec" {
+  name = "${var.environment}-fastship-ecs-task-exec-policy"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
