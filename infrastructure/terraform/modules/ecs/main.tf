@@ -30,6 +30,16 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
+    # Container health check for ECS
+    # This helps ECS determine container health independently of ALB health checks
+    healthCheck = {
+      command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 60  # Grace period for app startup (60 seconds)
+    }
+
     environment = var.container_environment
 
     secrets = var.container_secrets
