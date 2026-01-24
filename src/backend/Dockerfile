@@ -19,8 +19,12 @@ COPY . .
 # Set Python path
 ENV PYTHONPATH=/app
 
+# Expose port 8000
+EXPOSE 8000
+
 # AWS-specific: Health check endpoint
 # Using /health endpoint (also available at /api/v1/health)
+# Note: ECS task definition health check overrides this Docker HEALTHCHECK
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
