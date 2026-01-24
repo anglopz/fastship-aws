@@ -162,10 +162,10 @@ async def health_check():
 
 ---
 
-## Additional Issue: Out-of-Memory (OOM) Error
+## Additional Issue: Configuration Mismatch and OOM Error
 
 **Date:** January 23, 2026  
-**Issue:** Container OOM errors (exit code 137) causing task failures  
+**Issue:** Configuration mismatch between terraform.tfvars and task definition causing OOM errors  
 **Status:** ✅ Fixed
 
 ### Problem
@@ -174,39 +174,47 @@ After fixing the health check timeout issue, tasks began failing with Out-of-Mem
 
 - **Exit Code**: 137 (SIGKILL due to OOM)
 - **Container Status**: STOPPED
-- **Root Cause**: Memory allocation too low (512 MB)
+- **Root Cause**: Configuration mismatch - task definition had 1024 MB but terraform.tfvars had 512 MB
 
 ### Analysis
 
-**Memory Requirements:**
+**Configuration Mismatch:**
+- Task definition (dev-api:17): CPU: 512, Memory: 1024 MB
+- terraform.tfvars: api_task_cpu = 256, api_task_memory = 512 MB
+- **Mismatch caused inconsistent deployments**
+
+**Memory Requirements for Portfolio App:**
 - FastAPI application: ~200-300 MB base
 - SQLAlchemy + database connections: ~100-200 MB
 - Redis connections: ~50-100 MB
 - Python runtime + dependencies: ~100-200 MB
-- **Total estimated**: ~500-800 MB minimum
-- **With overhead**: Need at least 1024-1536 MB
+- **Total estimated**: ~450-800 MB
+- **With careful optimization**: 512 MB can work for a portfolio app
 
-**Previous Configuration:**
-- `api_task_memory = 512 MB` (too low)
-- `api_task_cpu = 256` (0.25 vCPU)
+**Initial Attempt:**
+- Tried to increase to 1536 MB but hit Fargate limitation (512 CPU + 1536 MB is invalid)
+- Valid combinations: 512 CPU + 1024/2048 MB or 256 CPU + 512/1024/2048 MB
 
 ### Solution
 
 **File**: `infrastructure/terraform/environments/dev/terraform.tfvars`
 
-**Changes**:
+**Final Configuration** (aligned across all files):
 ```hcl
-# Increased memory to prevent OOM errors
-api_task_cpu = 512        # Increased from 256 (0.5 vCPU)
-api_task_memory = 1536   # Increased from 512 MB
-worker_task_memory = 1024  # Increased from 512 MB for Celery worker
+# Portfolio app - minimal resources for cost efficiency
+# Configuration aligned between terraform.tfvars and task definition
+api_task_cpu = 256        # 0.25 vCPU - sufficient for portfolio app
+api_task_memory = 512     # 512 MB - aligned with task definition
+worker_task_cpu = 256     # 0.25 vCPU
+worker_task_memory = 512  # 512 MB - aligned with task definition
 ```
 
 **Rationale**:
-- 1536 MB provides adequate headroom for the application
-- 512 CPU units (0.5 vCPU) provides better performance
-- Still reasonable cost for dev environment
-- Prevents OOM kills (exit code 137)
+- **Portfolio app**: Not a heavily used production app, cost efficiency is priority
+- **Configuration alignment**: terraform.tfvars and task definition now match
+- **512 MB**: Sufficient for portfolio app with proper optimization
+- **256 CPU (0.25 vCPU)**: Adequate for low-traffic portfolio app
+- **Can scale later**: If needed, resources can be increased based on actual usage
 
 ### Monitoring
 
@@ -237,11 +245,12 @@ aws cloudwatch get-metric-statistics \
 
 ### Lessons Learned
 
-1. **Memory Allocation**: Always allocate more memory than minimum requirements
-2. **Monitor Early**: Enable Container Insights to track memory usage patterns
-3. **Exit Code 137**: Always indicates OOM - increase memory allocation
-4. **CPU/Memory Ratio**: For CPU-intensive apps, ensure adequate CPU as well
+1. **Configuration Alignment**: Always ensure terraform.tfvars matches task definition
+2. **Fargate Limitations**: Valid CPU/memory combinations must be used (check AWS docs)
+3. **Right-Sizing**: For portfolio apps, start minimal and scale based on actual needs
+4. **Exit Code 137**: Indicates OOM - but first check for configuration mismatches
+5. **Cost Efficiency**: Portfolio apps don't need production-level resources initially
 
 ### Related Commits
 
-- **Commit**: TBD - "Fix: Increase ECS task memory allocation to prevent OOM errors"
+- **Commit**: TBD - "Fix: Align ECS task configuration between terraform.tfvars and task definition"

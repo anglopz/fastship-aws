@@ -24,15 +24,15 @@ node_type           = "cache.t3.micro"
 redis_num_cache_nodes = 1
 
 # ECS Task Configuration
-# Increased memory to prevent OOM errors (exit code 137)
-# FastAPI + SQLAlchemy + Redis connections require adequate memory
-api_task_cpu       = 512
-api_task_memory    = 1536  # Increased from 512 to prevent OOM errors
+# Portfolio app - minimal resources for cost efficiency
+# Configuration aligned between terraform.tfvars and task definition
+api_task_cpu       = 256
+api_task_memory    = 512
 api_desired_count  = 1
 api_use_public_subnets = false
 
 worker_task_cpu      = 256
-worker_task_memory   = 1024  # Increased from 512 for Celery worker
+worker_task_memory   = 512
 worker_desired_count = 1
 
 log_retention_days = 7
