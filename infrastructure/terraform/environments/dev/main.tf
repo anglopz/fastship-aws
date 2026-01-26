@@ -104,6 +104,7 @@ module "ecs" {
   worker_task_cpu    = var.worker_task_cpu
   worker_task_memory = var.worker_task_memory
   worker_desired_count = var.worker_desired_count
+  worker_use_public_subnets = var.worker_use_public_subnets
 
   log_retention_days = var.log_retention_days
 

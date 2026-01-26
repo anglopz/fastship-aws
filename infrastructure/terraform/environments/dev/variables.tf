@@ -142,6 +142,12 @@ variable "worker_desired_count" {
   default     = 1
 }
 
+variable "worker_use_public_subnets" {
+  description = "Whether to run Celery worker in public subnets (needed for Mailtrap SMTP when NAT Gateway is disabled)"
+  type        = bool
+  default     = false
+}
+
 variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number

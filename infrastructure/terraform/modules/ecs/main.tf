@@ -139,9 +139,11 @@ resource "aws_ecs_service" "celery_worker" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.private_subnet_ids
+    # NOTE: Celery worker needs outbound internet for Mailtrap (SMTP) when NAT Gateway is disabled.
+    # Running it in public subnets with a public IP is the simplest low-cost option for dev.
+    subnets          = var.worker_use_public_subnets ? var.public_subnet_ids : var.private_subnet_ids
     security_groups  = [var.ecs_security_group_id]
-    assign_public_ip = false
+    assign_public_ip = var.worker_use_public_subnets
   }
 
   depends_on = [aws_iam_role_policy_attachment.ecs_execution]

@@ -36,6 +36,11 @@ api_use_public_subnets = false
 worker_task_cpu      = 256
 worker_task_memory   = 512
 worker_desired_count = 1
+# Worker networking:
+# - If NAT Gateway is disabled, private subnets have no internet egress.
+# - Mailtrap SMTP is a public endpoint, so the worker needs outbound internet to send emails.
+# - Lowest-cost dev option: run the worker in public subnets with a public IP.
+worker_use_public_subnets = false
 
 log_retention_days = 7
 
