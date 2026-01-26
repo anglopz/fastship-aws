@@ -5,11 +5,9 @@ This module provides Celery tasks for email and SMS sending,
 replacing FastAPI BackgroundTasks with a distributed, persistent task queue.
 """
 import logging
+
 from asgiref.sync import async_to_sync
 from celery import Celery
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
-from pydantic import EmailStr
-from twilio.rest import Client as TwilioClient
 
 from app.config import db_settings, logging_settings, mail_settings, twilio_settings
 from app.utils import TEMPLATE_DIR
@@ -23,6 +21,10 @@ _fastmail_instance = None
 
 def get_fastmail():
     """Get or create FastMail instance (singleton)"""
+    # NOTE: We import FastMail lazily so the API container (which only enqueues
+    # Celery tasks) doesn't pay the memory cost of mail dependencies.
+    from fastapi_mail import ConnectionConfig, FastMail
+
     global _fastmail_instance
     # Always recreate to pick up new configuration
     # This ensures we get the latest mail settings after restart
@@ -60,6 +62,9 @@ _twilio_client = None
 
 def get_twilio_client():
     """Get or create Twilio client (singleton)"""
+    # NOTE: Lazy import so API container doesn't load Twilio dependencies.
+    from twilio.rest import Client as TwilioClient
+
     global _twilio_client
     if _twilio_client is None and twilio_settings.TWILIO_SID:
         _twilio_client = TwilioClient(
@@ -109,6 +114,8 @@ def send_mail_task(
         str: Success message
     """
     try:
+        from fastapi_mail import MessageSchema, MessageType
+
         send_message_sync(
             message=MessageSchema(
                 recipients=recipients,
@@ -146,6 +153,8 @@ def send_email_with_template_task(
         str: Success message
     """
     try:
+        from fastapi_mail import MessageSchema, MessageType
+
         send_message_sync(
             message=MessageSchema(
                 recipients=recipients,

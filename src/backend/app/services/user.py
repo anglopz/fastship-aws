@@ -2,6 +2,8 @@
 User service base class providing common user operations
 """
 import logging
+import asyncio
+import functools
 from datetime import timedelta
 from typing import Optional
 from uuid import UUID
@@ -33,6 +35,29 @@ try:
 except ImportError:
     CELERY_AVAILABLE = False
     logger.warning("Celery not available, falling back to BackgroundTasks")
+
+def _enqueue_celery_email_template(*, recipients: list[str], subject: str, template_name: str, context: dict) -> None:
+    """
+    Best-effort enqueue of email task.
+
+    We intentionally avoid blocking the request/response cycle on broker connectivity.
+    If the broker is slow/unreachable, the request should still return quickly.
+    """
+    try:
+        send_email_with_template_task.apply_async(
+            kwargs={
+                "recipients": recipients,
+                "subject": subject,
+                "template_name": template_name,
+                "context": context,
+            },
+            ignore_result=True,
+            expires=300,  # don't keep stale reset emails around
+            retry=False,  # don't block/hang retrying to publish if broker is unreachable
+        )
+    except Exception:
+        # Don't raise: password reset endpoint must not fail/hang because of queueing.
+        pass
 
 
 class UserService(BaseService):
@@ -101,15 +126,19 @@ class UserService(BaseService):
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
-                # Use Celery task
-                send_email_with_template_task.delay(
-                    recipients=[user.email],
-                    subject="Verify Your Account With FastShip",
-                    template_name="mail_email_verify.html",
-                    context={
-                        "username": user.name,
-                        "verification_url": verification_url,
-                    },
+                # Fire-and-forget Celery enqueue (do not block request lifecycle)
+                asyncio.get_running_loop().run_in_executor(
+                    None,
+                    functools.partial(
+                        _enqueue_celery_email_template,
+                        recipients=[user.email],
+                        subject="Verify Your Account With FastShip",
+                        template_name="mail_email_verify.html",
+                        context={
+                            "username": user.name,
+                            "verification_url": verification_url,
+                        },
+                    ),
                 )
                 logger.info(f"Queued verification email to {user.email}")
             else:
@@ -214,15 +243,19 @@ class UserService(BaseService):
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
-                # Use Celery task
-                send_email_with_template_task.delay(
-                    recipients=[user.email],
-                    subject="FastShip Account Password Reset",
-                    template_name="mail_password_reset.html",
-                    context={
-                        "username": user.name,
-                        "reset_url": reset_url,
-                    },
+                # Fire-and-forget Celery enqueue (do not block request lifecycle)
+                asyncio.get_running_loop().run_in_executor(
+                    None,
+                    functools.partial(
+                        _enqueue_celery_email_template,
+                        recipients=[user.email],
+                        subject="FastShip Account Password Reset",
+                        template_name="mail_password_reset.html",
+                        context={
+                            "username": user.name,
+                            "reset_url": reset_url,
+                        },
+                    ),
                 )
                 logger.info(f"Queued password reset email to {user.email}")
             else:

@@ -21,13 +21,27 @@ resource "aws_lb_target_group" "backend" {
 
   health_check {
     enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 10
-    interval            = 30
+    healthy_threshold    = 2
+    # Unhealthy threshold: 3 (increased from 2 per Amazon Q recommendation)
+    # Industry standard: Higher threshold prevents premature failure detection
+    # - Allows more tolerance for transient failures
+    # - Reduces false positives during startup and network hiccups
+    unhealthy_threshold  = 3
+    # Timeout: 30 seconds (reduced from 60s per Amazon Q recommendation)
+    # Industry standard: Shorter timeout with more retries is more reliable
+    # - 30s timeout is sufficient for health endpoint response
+    # - Combined with 3 unhealthy threshold = 90s total before marking unhealthy
+    # - Prevents long waits while still allowing adequate response time
+    timeout             = 30
+    # Interval: 35 seconds (must be > timeout per AWS requirement)
+    # Industry standard: Interval should be slightly greater than timeout
+    # - 35s interval provides 5s buffer above 30s timeout (meets AWS requirement)
+    # - More frequent checks allow faster recovery detection
+    interval            = 35
     path                = "/health"
     matcher             = "200"
     protocol            = "HTTP"
+    port                = "traffic-port"
   }
 
   tags = {

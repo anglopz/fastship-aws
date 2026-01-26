@@ -1,19 +1,25 @@
 """
 Mail service with SMTP connection, pooling, and retry logic
 """
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from pydantic import EmailStr
-from twilio.rest import Client as TwilioClient
 
 from app.config import mail_settings, twilio_settings
 from app.utils import TEMPLATE_DIR
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    # Imported only for typing; actual imports are done lazily to keep the API
+    # process memory footprint low on small ECS/Fargate tasks.
+    from fastapi_mail import FastMail, MessageSchema, MessageType
+    from twilio.rest import Client as TwilioClient
 
 
 class MailClient:
@@ -35,6 +41,10 @@ class MailClient:
     @property
     def fastmail(self) -> FastMail:
         """Lazy initialization of FastMail client with connection pooling"""
+        # Lazy import to reduce memory footprint in the API container unless
+        # SMTP is actually used.
+        from fastapi_mail import ConnectionConfig, FastMail
+
         if self._fastmail is None:
             # Get SMTP config based on EMAIL_MODE
             smtp_config = mail_settings.get_smtp_config()
@@ -64,6 +74,8 @@ class MailClient:
             Dictionary with connection status and details
         """
         try:
+            from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+
             smtp_config = mail_settings.get_smtp_config()
             
             # Validate required settings
@@ -179,7 +191,7 @@ class MailClient:
         recipients: list[EmailStr],
         subject: str,
         body: str,
-        subtype: MessageType = MessageType.plain,
+        subtype: "MessageType | None" = None,
     ) -> bool:
         """
         Send a plain text or HTML email with retry logic.
@@ -193,6 +205,11 @@ class MailClient:
         Returns:
             True if email was sent successfully, False otherwise
         """
+        from fastapi_mail import MessageSchema, MessageType
+
+        if subtype is None:
+            subtype = MessageType.plain
+
         message = MessageSchema(
             recipients=recipients,
             subject=subject,
@@ -221,6 +238,8 @@ class MailClient:
         Returns:
             True if email was sent successfully, False otherwise
         """
+        from fastapi_mail import MessageSchema, MessageType
+
         try:
             # Render template separately from sending
             html_body = self.render_template(template_name, context)
@@ -283,6 +302,9 @@ class MailClient:
     @property
     def twilio_client(self) -> Optional[TwilioClient]:
         """Lazy initialization of Twilio client for SMS"""
+        # Lazy import so API tasks that don't use SMS don't load Twilio deps.
+        from twilio.rest import Client as TwilioClient
+
         if self._twilio_client is None:
             # Only initialize if Twilio credentials are provided
             if twilio_settings.TWILIO_SID and twilio_settings.TWILIO_AUTH_TOKEN:

@@ -1,47 +1,49 @@
 services:
   api:
     build: .
-    working_dir: /code
-    user: "1000:1000" # Run as host user to avoid permission issues with created files
+    working_dir: /app
     ports:
       - "8000:8000"
     environment:
-      - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://postgres:password@db:5432/fastapi_db
+      # Database Configuration
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=fastapi_db
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174}
-      - EMAIL_MODE=${EMAIL_MODE:-sandbox}
-      - MAIL_USERNAME=${MAIL_USERNAME:-}
-      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
-      - MAIL_FROM=${MAIL_FROM:-noreply@fastship.com}
-      - MAIL_PORT=${MAIL_PORT:-587}
-      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
-      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-FastShip}
-      - MAIL_STARTTLS=${MAIL_STARTTLS:-true}
-      - MAIL_SSL_TLS=${MAIL_SSL_TLS:-false}
-      - USE_CREDENTIALS=${USE_CREDENTIALS:-true}
-      - VALIDATE_CERTS=${VALIDATE_CERTS:-true}
-      - MAILTRAP_USERNAME=${MAILTRAP_USERNAME:-020d1c8f1885ca}
-      - MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD:-751fa63432b05f}
-      - MAILTRAP_SERVER=${MAILTRAP_SERVER:-sandbox.smtp.mailtrap.io}
-      - MAILTRAP_PORT=${MAILTRAP_PORT:-587}
+      # Application Settings
+      - APP_DOMAIN=localhost:8000
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174}
+      # Security
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      # Email Configuration (Mailtrap for local testing)
+      - EMAIL_MODE=${EMAIL_MODE:-sandbox}
+      - MAILTRAP_USERNAME=${MAILTRAP_USERNAME:-}
+      - MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD:-}
+      - MAIL_FROM=${MAIL_FROM:-noreply@fastship.local}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-FastShip Dev}
+      # Twilio (Optional)
       - TWILIO_SID=${TWILIO_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
       - TWILIO_NUMBER=${TWILIO_NUMBER:-}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENABLE_REQUEST_LOGGING=${ENABLE_REQUEST_LOGGING:-true}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
     volumes:
-      - .:/code
+      - .:/app
+      - /app/.venv  # Exclude venv from volume mount
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
 
   db:
@@ -69,49 +71,45 @@ services:
 
   celery_worker:
     build: .
-    working_dir: /code
-    user: "1000:1000"
+    working_dir: /app
     command: celery -A app.celery_app worker --loglevel=info
     environment:
-      - REDIS_URL=redis://redis:6379/2
-      - DATABASE_URL=postgresql://postgres:password@db:5432/fastapi_db
+      # Database Configuration
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=fastapi_db
+      # Redis Configuration (use different DB for Celery)
+      - REDIS_URL=redis://redis:6379/2
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
-      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
-      - EMAIL_MODE=${EMAIL_MODE:-sandbox}
-      - MAIL_USERNAME=${MAIL_USERNAME:-}
-      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
-      - MAIL_FROM=${MAIL_FROM:-noreply@fastship.com}
-      - MAIL_PORT=${MAIL_PORT:-587}
-      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
-      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-FastShip}
-      - MAIL_STARTTLS=${MAIL_STARTTLS:-true}
-      - MAIL_SSL_TLS=${MAIL_SSL_TLS:-false}
-      - USE_CREDENTIALS=${USE_CREDENTIALS:-true}
-      - VALIDATE_CERTS=${VALIDATE_CERTS:-true}
-      - MAILTRAP_USERNAME=${MAILTRAP_USERNAME:-020d1c8f1885ca}
-      - MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD:-751fa63432b05f}
-      - MAILTRAP_SERVER=${MAILTRAP_SERVER:-sandbox.smtp.mailtrap.io}
-      - MAILTRAP_PORT=${MAILTRAP_PORT:-587}
-      - APP_DOMAIN=${APP_DOMAIN:-localhost:8000}
+      # Application Settings
+      - APP_DOMAIN=localhost:8000
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      # Security
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      # Email Configuration
+      - EMAIL_MODE=${EMAIL_MODE:-sandbox}
+      - MAILTRAP_USERNAME=${MAILTRAP_USERNAME:-}
+      - MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD:-}
+      - MAIL_FROM=${MAIL_FROM:-noreply@fastship.local}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-FastShip Dev}
+      # Twilio (Optional)
       - TWILIO_SID=${TWILIO_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
       - TWILIO_NUMBER=${TWILIO_NUMBER:-}
-      - APP_DOMAIN=${APP_DOMAIN:-localhost:8000}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+      api:
+        condition: service_started
     volumes:
-      - .:/code
+      - .:/app
+      - /app/.venv  # Exclude venv from volume mount
     restart: unless-stopped
 
   frontend:

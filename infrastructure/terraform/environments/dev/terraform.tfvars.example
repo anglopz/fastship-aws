@@ -24,13 +24,15 @@ node_type           = "cache.t3.micro"
 redis_num_cache_nodes = 1
 
 # ECS Task Configuration
-# Portfolio app - minimal resources for cost efficiency
-# Configuration aligned between terraform.tfvars and task definition
-api_task_cpu       = 256
-api_task_memory    = 512
+# Increased resources per Amazon Q recommendation to address health check failures
+# Previous: 256 CPU, 512MB memory (resource-constrained)
+# Current: 512 CPU, 1024MB memory (adequate for startup and health checks)
+api_task_cpu       = 512
+api_task_memory    = 1024
 api_desired_count  = 1
 api_use_public_subnets = false
 
+# Worker tasks remain at minimal resources (background processing, less critical)
 worker_task_cpu      = 256
 worker_task_memory   = 512
 worker_desired_count = 1
