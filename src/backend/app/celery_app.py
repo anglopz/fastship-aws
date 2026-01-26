@@ -4,7 +4,10 @@ Celery task queue for background task processing.
 This module provides Celery tasks for email and SMS sending,
 replacing FastAPI BackgroundTasks with a distributed, persistent task queue.
 """
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from asgiref.sync import async_to_sync
 from celery import Celery
@@ -13,6 +16,10 @@ from app.config import db_settings, logging_settings, mail_settings, twilio_sett
 from app.utils import TEMPLATE_DIR
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    # Only needed for typing; imported lazily at runtime elsewhere.
+    from fastapi_mail import MessageSchema
 
 # Create FastMail instance for Celery tasks
 # Note: Celery tasks must be synchronous, so we use async_to_sync wrapper
