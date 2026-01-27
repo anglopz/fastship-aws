@@ -35,7 +35,7 @@ async def get_redis():
             query_params = parse_qs(parsed.query)
             
             # Extract ssl_cert_reqs if present
-            ssl_cert_reqs = None
+            ssl_cert_reqs = ssl.CERT_REQUIRED  # Default to secure: require certificate validation
             if "ssl_cert_reqs" in query_params:
                 cert_reqs_value = query_params["ssl_cert_reqs"][0]
                 # Remove ssl_cert_reqs from query string
@@ -46,19 +46,22 @@ async def get_redis():
                 if new_query:
                     redis_url += f"?{new_query}"
                 
-                # Map CERT_NONE to ssl.CERT_NONE
+                # Map certificate requirement values
                 if cert_reqs_value == "CERT_NONE":
                     ssl_cert_reqs = ssl.CERT_NONE
+                elif cert_reqs_value == "CERT_OPTIONAL":
+                    ssl_cert_reqs = ssl.CERT_OPTIONAL
+                elif cert_reqs_value == "CERT_REQUIRED":
+                    ssl_cert_reqs = ssl.CERT_REQUIRED
+                # Default to CERT_REQUIRED for security
             
-            # Create connection pool with SSL configuration if needed
+            # Create connection pool with SSL configuration
+            # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them
             connection_kwargs = {
                 "db": params.get("db", 1),
                 "decode_responses": True,
+                "ssl_cert_reqs": ssl_cert_reqs,  # Always set SSL cert requirements for security
             }
-            
-            # Add SSL certificate requirements if specified
-            if ssl_cert_reqs is not None:
-                connection_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
             
             pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
             _cache_client = AsyncRedis(connection_pool=pool)
@@ -97,7 +100,7 @@ async def get_token_blacklist() -> Redis:
             query_params = parse_qs(parsed.query)
             
             # Extract ssl_cert_reqs if present
-            ssl_cert_reqs = None
+            ssl_cert_reqs = ssl.CERT_REQUIRED  # Default to secure: require certificate validation
             if "ssl_cert_reqs" in query_params:
                 cert_reqs_value = query_params["ssl_cert_reqs"][0]
                 # Remove ssl_cert_reqs from query string
@@ -108,19 +111,22 @@ async def get_token_blacklist() -> Redis:
                 if new_query:
                     redis_url += f"?{new_query}"
                 
-                # Map CERT_NONE to ssl.CERT_NONE
+                # Map certificate requirement values
                 if cert_reqs_value == "CERT_NONE":
                     ssl_cert_reqs = ssl.CERT_NONE
+                elif cert_reqs_value == "CERT_OPTIONAL":
+                    ssl_cert_reqs = ssl.CERT_OPTIONAL
+                elif cert_reqs_value == "CERT_REQUIRED":
+                    ssl_cert_reqs = ssl.CERT_REQUIRED
+                # Default to CERT_REQUIRED for security
             
-            # Create connection pool with SSL configuration if needed
+            # Create connection pool with SSL configuration
+            # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them
             connection_kwargs = {
                 "db": 0,  # Token blacklist uses db=0
                 "decode_responses": True,
+                "ssl_cert_reqs": ssl_cert_reqs,  # Always set SSL cert requirements for security
             }
-            
-            # Add SSL certificate requirements if specified
-            if ssl_cert_reqs is not None:
-                connection_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
             
             pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
             _token_blacklist = Redis(connection_pool=pool)

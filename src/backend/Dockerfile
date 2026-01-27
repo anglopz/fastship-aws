@@ -3,10 +3,12 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
+# ca-certificates is included for SSL certificate validation (required for AWS ElastiCache Redis)
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements

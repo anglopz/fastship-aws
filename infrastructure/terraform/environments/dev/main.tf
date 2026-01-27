@@ -137,9 +137,9 @@ module "ecs" {
     # Use `rediss://` to enable SSL/TLS in redis-py and Celery broker connections.
     {
       name  = "REDIS_URL"
-      # NOTE: Celery/Kombu requires ssl_cert_reqs to be set when using rediss:// URLs.
-      # Quick dev fix: CERT_NONE (no certificate validation). After confirming stability, we can tighten to CERT_REQUIRED.
-      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=CERT_NONE"
+      # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them properly.
+      # Using CERT_REQUIRED for secure certificate validation (default in code, but explicit here for clarity).
+      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=CERT_REQUIRED"
     },
     # Email configuration - Mailtrap sandbox
     {
