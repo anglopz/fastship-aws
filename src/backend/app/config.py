@@ -58,9 +58,16 @@ class DatabaseSettings(BaseSettings):
                 # Already in correct format or needs conversion
                 pass
             
-            # Add SSL if not already present (required for AWS RDS)
+            # Add SSL if not already present (required for AWS RDS, but not for local dev)
             # asyncpg uses 'ssl=require' parameter, not 'sslmode'
-            if "ssl=" not in url and "sslmode=" not in url:
+            # Only require SSL if not connecting to localhost/db (local development)
+            # Check URL for local connection indicators
+            is_local = any(indicator in url.lower() for indicator in ["@localhost", "@127.0.0.1", "@db:", ":db/"])
+            # Also check POSTGRES_SERVER if available
+            if hasattr(self, 'POSTGRES_SERVER'):
+                is_local = is_local or self.POSTGRES_SERVER in ("localhost", "127.0.0.1", "db")
+            
+            if "ssl=" not in url and "sslmode=" not in url and not is_local:
                 separator = "?" if "?" not in url else "&"
                 url = f"{url}{separator}ssl=require"
             # Convert sslmode to ssl for asyncpg compatibility
@@ -75,9 +82,11 @@ class DatabaseSettings(BaseSettings):
         encoded_password = quote_plus(self.POSTGRES_PASSWORD)
         encoded_user = quote_plus(self.POSTGRES_USER) if self.POSTGRES_USER else self.POSTGRES_USER
         
-        # Add SSL for RDS connections (required by AWS RDS)
+        # Add SSL for RDS connections (required by AWS RDS, but not for local dev)
         # asyncpg uses 'ssl=require' parameter, not 'sslmode'
-        ssl_param = "?ssl=require"
+        # Only require SSL if not connecting to localhost/db (local development)
+        is_local = self.POSTGRES_SERVER in ("localhost", "127.0.0.1", "db")
+        ssl_param = "?ssl=require" if not is_local else ""
         return (
             f"postgresql+asyncpg://{encoded_user}:{encoded_password}@"
             f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}{ssl_param}"

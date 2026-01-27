@@ -7,7 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including dev dependencies needed for build)
-RUN npm ci
+# Use --legacy-peer-deps to resolve react-qr-reader peer dependency conflict with React 18
+RUN npm ci --legacy-peer-deps
 
 # Copy application files
 COPY . .

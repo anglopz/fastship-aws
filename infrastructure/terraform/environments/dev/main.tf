@@ -132,10 +132,14 @@ module "ecs" {
       name  = "POSTGRES_DB"
       value = var.database_name
     },
-    # Redis URL (no special characters in auth token, so safe to use URL)
+    # Redis URL
+    # IMPORTANT: ElastiCache has transit_encryption_enabled=true, so clients must use TLS.
+    # Use `rediss://` to enable SSL/TLS in redis-py and Celery broker connections.
     {
       name  = "REDIS_URL"
-      value = "redis://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}"
+      # NOTE: Celery/Kombu requires ssl_cert_reqs to be set when using rediss:// URLs.
+      # Quick dev fix: CERT_NONE (no certificate validation). After confirming stability, we can tighten to CERT_REQUIRED.
+      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=CERT_NONE"
     },
     # Email configuration - Mailtrap sandbox
     {

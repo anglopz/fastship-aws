@@ -44,7 +44,7 @@ def _enqueue_celery_email_template(*, recipients: list[str], subject: str, templ
     If the broker is slow/unreachable, the request should still return quickly.
     """
     try:
-        send_email_with_template_task.apply_async(
+        result = send_email_with_template_task.apply_async(
             kwargs={
                 "recipients": recipients,
                 "subject": subject,
@@ -55,9 +55,10 @@ def _enqueue_celery_email_template(*, recipients: list[str], subject: str, templ
             expires=300,  # don't keep stale reset emails around
             retry=False,  # don't block/hang retrying to publish if broker is unreachable
         )
-    except Exception:
-        # Don't raise: password reset endpoint must not fail/hang because of queueing.
-        pass
+        logger.info(f"Successfully enqueued email task {result.id} to {recipients}")
+    except Exception as e:
+        # Log the error but don't raise: password reset endpoint must not fail/hang because of queueing.
+        logger.error(f"Failed to enqueue email task to {recipients}: {e}", exc_info=True)
 
 
 class UserService(BaseService):
@@ -122,27 +123,32 @@ class UserService(BaseService):
             router_prefix_clean = router_prefix.lstrip('/')
             # Use HTTPS for production (AWS), HTTP for localhost
             protocol = "https" if "localhost" not in app_settings.APP_DOMAIN else "http"
-            verification_url = f"{protocol}://{app_settings.APP_DOMAIN}/{router_prefix_clean}/verify?token={token}"
+            # Include /api/v1 prefix as router is mounted at /api/v1 in main.py
+            verification_url = f"{protocol}://{app_settings.APP_DOMAIN}/api/v1/{router_prefix_clean}/verify?token={token}"
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
+                logger.info(f"Attempting to enqueue verification email to {user.email} via Celery")
                 # Fire-and-forget Celery enqueue (do not block request lifecycle)
-                asyncio.get_running_loop().run_in_executor(
-                    None,
-                    functools.partial(
-                        _enqueue_celery_email_template,
-                        recipients=[user.email],
-                        subject="Verify Your Account With FastShip",
-                        template_name="mail_email_verify.html",
-                        context={
-                            "username": user.name,
-                            "verification_url": verification_url,
-                        },
-                    ),
-                )
-                logger.info(f"Queued verification email to {user.email}")
+                try:
+                    asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            _enqueue_celery_email_template,
+                            recipients=[user.email],
+                            subject="Verify Your Account With FastShip",
+                            template_name="mail_email_verify.html",
+                            context={
+                                "username": user.name,
+                                "verification_url": verification_url,
+                            },
+                        ),
+                    )
+                    logger.info(f"Queued verification email to {user.email}")
+                except Exception as e:
+                    logger.error(f"Failed to enqueue verification email to {user.email}: {e}", exc_info=True)
             else:
-                logger.warning(f"Celery not available or mail_client missing - verification email not sent to {user.email}")
+                logger.warning(f"Celery not available (CELERY_AVAILABLE={CELERY_AVAILABLE}) or mail_client missing (mail_client={self.mail_client}) - verification email not sent to {user.email}")
         except Exception as e:
             logger.error(f"Failed to send verification email to {user.email}: {e}", exc_info=True)
 
@@ -239,27 +245,32 @@ class UserService(BaseService):
             router_prefix_clean = router_prefix.lstrip('/')
             # Use HTTPS for production (AWS), HTTP for localhost
             protocol = "https" if "localhost" not in app_settings.APP_DOMAIN else "http"
-            reset_url = f"{protocol}://{app_settings.APP_DOMAIN}/{router_prefix_clean}/reset_password_form?token={token}"
+            # Include /api/v1 prefix as router is mounted at /api/v1 in main.py
+            reset_url = f"{protocol}://{app_settings.APP_DOMAIN}/api/v1/{router_prefix_clean}/reset_password_form?token={token}"
             
             # Phase 3: Use Celery as primary method (BackgroundTasks removed)
             if CELERY_AVAILABLE and self.mail_client:
+                logger.info(f"Attempting to enqueue password reset email to {user.email} via Celery")
                 # Fire-and-forget Celery enqueue (do not block request lifecycle)
-                asyncio.get_running_loop().run_in_executor(
-                    None,
-                    functools.partial(
-                        _enqueue_celery_email_template,
-                        recipients=[user.email],
-                        subject="FastShip Account Password Reset",
-                        template_name="mail_password_reset.html",
-                        context={
-                            "username": user.name,
-                            "reset_url": reset_url,
-                        },
-                    ),
-                )
-                logger.info(f"Queued password reset email to {user.email}")
+                try:
+                    asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            _enqueue_celery_email_template,
+                            recipients=[user.email],
+                            subject="FastShip Account Password Reset",
+                            template_name="mail_password_reset.html",
+                            context={
+                                "username": user.name,
+                                "reset_url": reset_url,
+                            },
+                        ),
+                    )
+                    logger.info(f"Queued password reset email to {user.email}")
+                except Exception as e:
+                    logger.error(f"Failed to enqueue password reset email to {user.email}: {e}", exc_info=True)
             else:
-                logger.warning(f"Celery not available or mail_client missing - password reset email not sent to {user.email}")
+                logger.warning(f"Celery not available (CELERY_AVAILABLE={CELERY_AVAILABLE}) or mail_client missing (mail_client={self.mail_client}) - password reset email not sent to {user.email}")
         except Exception as e:
             logger.error(f"Failed to send password reset email to {user.email}: {e}")
 
@@ -274,6 +285,8 @@ class UserService(BaseService):
         Returns:
             True if password reset successful, False if token invalid/expired
         """
+        logger.info(f"Password reset attempt - token prefix: {token[:20]}...")
+        
         # Decode token with salt and 24-hour expiration
         token_data = decode_url_safe_token(
             token,
@@ -282,21 +295,33 @@ class UserService(BaseService):
         )
         
         if not token_data:
+            logger.warning(f"Password reset failed: Invalid or expired token (prefix: {token[:20]}...)")
             return False
+        
+        logger.info(f"Token decoded successfully - user_id from token: {token_data.get('id')}")
         
         # Get user by ID from token
         try:
             user_id = UUID(token_data["id"])
-        except (ValueError, KeyError):
+        except (ValueError, KeyError) as e:
+            logger.error(f"Password reset failed: Invalid user ID in token - {e}")
             return False
         
         user = await self._get(user_id)
         if user is None:
+            logger.warning(f"Password reset failed: User not found for ID {user_id}")
             return False
+        
+        logger.info(f"Password reset: Updating password for user {user.email} (ID: {user_id})")
         
         # Update password hash
         user.password_hash = hash_password(password)
         await self._update(user)
+        
+        # Explicitly refresh to ensure changes are visible
+        await self.session.refresh(user)
+        
+        logger.info(f"Password reset successful for user {user.email} (ID: {user_id}, email_verified: {user.email_verified})")
         
         return True
 
