@@ -23,7 +23,7 @@ jobs:
     
     - name: Build React app
       env:
-        VITE_API_URL: https://api.fastship-api.com
+        VITE_API_URL: https://api.fastship-api.com/api/v1
       run: |
         cd src/frontend
         npm ci
