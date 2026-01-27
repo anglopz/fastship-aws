@@ -138,8 +138,9 @@ module "ecs" {
     {
       name  = "REDIS_URL"
       # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them properly.
-      # Using CERT_REQUIRED for secure certificate validation (default in code, but explicit here for clarity).
-      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=CERT_REQUIRED"
+      # Using "required" (redis-py string format) for secure certificate validation.
+      # The code will parse this and convert to redis-py's expected format.
+      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=required"
     },
     # Email configuration - Mailtrap sandbox
     {

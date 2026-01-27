@@ -35,7 +35,8 @@ async def get_redis():
             query_params = parse_qs(parsed.query)
             
             # Extract ssl_cert_reqs if present
-            ssl_cert_reqs = ssl.CERT_REQUIRED  # Default to secure: require certificate validation
+            # redis-py expects string values: "none", "optional", "required" (not ssl module constants)
+            ssl_cert_reqs_str = "required"  # Default to secure: require certificate validation
             if "ssl_cert_reqs" in query_params:
                 cert_reqs_value = query_params["ssl_cert_reqs"][0]
                 # Remove ssl_cert_reqs from query string
@@ -46,21 +47,21 @@ async def get_redis():
                 if new_query:
                     redis_url += f"?{new_query}"
                 
-                # Map certificate requirement values
-                if cert_reqs_value == "CERT_NONE":
-                    ssl_cert_reqs = ssl.CERT_NONE
-                elif cert_reqs_value == "CERT_OPTIONAL":
-                    ssl_cert_reqs = ssl.CERT_OPTIONAL
-                elif cert_reqs_value == "CERT_REQUIRED":
-                    ssl_cert_reqs = ssl.CERT_REQUIRED
-                # Default to CERT_REQUIRED for security
+                # Map certificate requirement values to redis-py string format
+                if cert_reqs_value == "CERT_NONE" or cert_reqs_value.lower() == "none":
+                    ssl_cert_reqs_str = "none"
+                elif cert_reqs_value == "CERT_OPTIONAL" or cert_reqs_value.lower() == "optional":
+                    ssl_cert_reqs_str = "optional"
+                elif cert_reqs_value == "CERT_REQUIRED" or cert_reqs_value.lower() == "required":
+                    ssl_cert_reqs_str = "required"
+                # Default to "required" for security
             
             # Create connection pool with SSL configuration
             # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them
             connection_kwargs = {
                 "db": params.get("db", 1),
                 "decode_responses": True,
-                "ssl_cert_reqs": ssl_cert_reqs,  # Always set SSL cert requirements for security
+                "ssl_cert_reqs": ssl_cert_reqs_str,  # redis-py expects string: "none", "optional", or "required"
             }
             
             pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
@@ -100,7 +101,8 @@ async def get_token_blacklist() -> Redis:
             query_params = parse_qs(parsed.query)
             
             # Extract ssl_cert_reqs if present
-            ssl_cert_reqs = ssl.CERT_REQUIRED  # Default to secure: require certificate validation
+            # redis-py expects string values: "none", "optional", "required" (not ssl module constants)
+            ssl_cert_reqs_str = "required"  # Default to secure: require certificate validation
             if "ssl_cert_reqs" in query_params:
                 cert_reqs_value = query_params["ssl_cert_reqs"][0]
                 # Remove ssl_cert_reqs from query string
@@ -111,21 +113,21 @@ async def get_token_blacklist() -> Redis:
                 if new_query:
                     redis_url += f"?{new_query}"
                 
-                # Map certificate requirement values
-                if cert_reqs_value == "CERT_NONE":
-                    ssl_cert_reqs = ssl.CERT_NONE
-                elif cert_reqs_value == "CERT_OPTIONAL":
-                    ssl_cert_reqs = ssl.CERT_OPTIONAL
-                elif cert_reqs_value == "CERT_REQUIRED":
-                    ssl_cert_reqs = ssl.CERT_REQUIRED
-                # Default to CERT_REQUIRED for security
+                # Map certificate requirement values to redis-py string format
+                if cert_reqs_value == "CERT_NONE" or cert_reqs_value.lower() == "none":
+                    ssl_cert_reqs_str = "none"
+                elif cert_reqs_value == "CERT_OPTIONAL" or cert_reqs_value.lower() == "optional":
+                    ssl_cert_reqs_str = "optional"
+                elif cert_reqs_value == "CERT_REQUIRED" or cert_reqs_value.lower() == "required":
+                    ssl_cert_reqs_str = "required"
+                # Default to "required" for security
             
             # Create connection pool with SSL configuration
             # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them
             connection_kwargs = {
                 "db": 0,  # Token blacklist uses db=0
                 "decode_responses": True,
-                "ssl_cert_reqs": ssl_cert_reqs,  # Always set SSL cert requirements for security
+                "ssl_cert_reqs": ssl_cert_reqs_str,  # redis-py expects string: "none", "optional", or "required"
             }
             
             pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
