@@ -21,18 +21,46 @@ async def get_redis():
     if _cache_client is None:
         from redis.asyncio import Redis as AsyncRedis
         from redis.asyncio.connection import ConnectionPool
+        import ssl
+        from urllib.parse import urlparse, parse_qs, urlencode
         
         # Get connection params (supports both REDIS_URL and individual settings)
         params = db_settings.get_redis_connection_params()
         
         # Use URL if available, otherwise use host/port
         if "url" in params:
-            # Parse URL and create connection pool
-            pool = ConnectionPool.from_url(
-                params["url"],
-                db=params.get("db", 1),
-                decode_responses=True,
-            )
+            # Parse URL to extract ssl_cert_reqs parameter
+            redis_url = params["url"]
+            parsed = urlparse(redis_url)
+            query_params = parse_qs(parsed.query)
+            
+            # Extract ssl_cert_reqs if present
+            ssl_cert_reqs = None
+            if "ssl_cert_reqs" in query_params:
+                cert_reqs_value = query_params["ssl_cert_reqs"][0]
+                # Remove ssl_cert_reqs from query string
+                query_params.pop("ssl_cert_reqs")
+                # Rebuild URL without ssl_cert_reqs
+                new_query = urlencode(query_params, doseq=True)
+                redis_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                if new_query:
+                    redis_url += f"?{new_query}"
+                
+                # Map CERT_NONE to ssl.CERT_NONE
+                if cert_reqs_value == "CERT_NONE":
+                    ssl_cert_reqs = ssl.CERT_NONE
+            
+            # Create connection pool with SSL configuration if needed
+            connection_kwargs = {
+                "db": params.get("db", 1),
+                "decode_responses": True,
+            }
+            
+            # Add SSL certificate requirements if specified
+            if ssl_cert_reqs is not None:
+                connection_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
+            
+            pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
             _cache_client = AsyncRedis(connection_pool=pool)
         else:
             _cache_client = AsyncRedis(
@@ -55,18 +83,46 @@ async def get_token_blacklist() -> Redis:
     global _token_blacklist
     if _token_blacklist is None:
         from redis.asyncio.connection import ConnectionPool
+        import ssl
+        from urllib.parse import urlparse, parse_qs, urlencode
         
         # Get connection params (supports both REDIS_URL and individual settings)
         params = db_settings.get_redis_connection_params()
         
         # Use URL if available, otherwise use host/port
         if "url" in params:
-            # Parse URL and create connection pool (use db=0 for blacklist)
-            pool = ConnectionPool.from_url(
-                params["url"],
-                db=0,  # Token blacklist uses db=0
-                decode_responses=True,
-            )
+            # Parse URL to extract ssl_cert_reqs parameter
+            redis_url = params["url"]
+            parsed = urlparse(redis_url)
+            query_params = parse_qs(parsed.query)
+            
+            # Extract ssl_cert_reqs if present
+            ssl_cert_reqs = None
+            if "ssl_cert_reqs" in query_params:
+                cert_reqs_value = query_params["ssl_cert_reqs"][0]
+                # Remove ssl_cert_reqs from query string
+                query_params.pop("ssl_cert_reqs")
+                # Rebuild URL without ssl_cert_reqs
+                new_query = urlencode(query_params, doseq=True)
+                redis_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                if new_query:
+                    redis_url += f"?{new_query}"
+                
+                # Map CERT_NONE to ssl.CERT_NONE
+                if cert_reqs_value == "CERT_NONE":
+                    ssl_cert_reqs = ssl.CERT_NONE
+            
+            # Create connection pool with SSL configuration if needed
+            connection_kwargs = {
+                "db": 0,  # Token blacklist uses db=0
+                "decode_responses": True,
+            }
+            
+            # Add SSL certificate requirements if specified
+            if ssl_cert_reqs is not None:
+                connection_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
+            
+            pool = ConnectionPool.from_url(redis_url, **connection_kwargs)
             _token_blacklist = Redis(connection_pool=pool)
         else:
             _token_blacklist = Redis(
