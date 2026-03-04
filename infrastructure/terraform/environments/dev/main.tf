@@ -37,12 +37,13 @@ module "vpc" {
 }
 
 module "rds" {
+  count  = var.services_enabled ? 1 : 0
   source = "../../modules/rds"
 
   project_name       = "fastship"
   environment        = local.environment
   private_subnet_ids = module.vpc.private_subnet_ids
-  security_group_id  = module.networking.rds_security_group_id
+  security_group_id  = module.networking[0].rds_security_group_id
 
   db_name     = var.database_name
   db_username = var.username
@@ -55,12 +56,13 @@ module "rds" {
 }
 
 module "redis" {
+  count  = var.services_enabled ? 1 : 0
   source = "../../modules/redis"
 
   project_name       = "fastship"
   environment        = local.environment
   private_subnet_ids = module.vpc.private_subnet_ids
-  security_group_id  = module.networking.redis_security_group_id
+  security_group_id  = module.networking[0].redis_security_group_id
 
   node_type       = var.node_type
   num_cache_nodes = var.redis_num_cache_nodes
@@ -68,6 +70,7 @@ module "redis" {
 }
 
 module "networking" {
+  count  = var.services_enabled ? 1 : 0
   source = "../../modules/networking"
 
   project_name        = "fastship"
@@ -85,25 +88,26 @@ module "ecr" {
 }
 
 module "ecs" {
+  count  = var.services_enabled ? 1 : 0
   source = "../../modules/ecs"
 
-  project_name          = "fastship"
-  environment           = local.environment
-  aws_region            = var.aws_region
-  backend_image         = var.backend_image
-  public_subnet_ids     = module.vpc.public_subnet_ids
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  ecs_security_group_id = module.networking.ecs_security_group_id
-  target_group_arn      = module.networking.target_group_arn
+  project_name           = "fastship"
+  environment            = local.environment
+  aws_region             = var.aws_region
+  backend_image          = var.backend_image
+  public_subnet_ids      = module.vpc.public_subnet_ids
+  private_subnet_ids     = module.vpc.private_subnet_ids
+  ecs_security_group_id  = module.networking[0].ecs_security_group_id
+  target_group_arn       = module.networking[0].target_group_arn
   api_use_public_subnets = var.api_use_public_subnets
 
-  api_task_cpu    = var.api_task_cpu
-  api_task_memory = var.api_task_memory
+  api_task_cpu      = var.api_task_cpu
+  api_task_memory   = var.api_task_memory
   api_desired_count = var.api_desired_count
 
-  worker_task_cpu    = var.worker_task_cpu
-  worker_task_memory = var.worker_task_memory
-  worker_desired_count = var.worker_desired_count
+  worker_task_cpu           = var.worker_task_cpu
+  worker_task_memory        = var.worker_task_memory
+  worker_desired_count      = var.worker_desired_count
   worker_use_public_subnets = var.worker_use_public_subnets
 
   log_retention_days = var.log_retention_days
@@ -114,11 +118,11 @@ module "ecs" {
     # The app's DatabaseSettings will construct the URL from these individual settings
     {
       name  = "POSTGRES_SERVER"
-      value = module.rds.db_address
+      value = module.rds[0].db_address
     },
     {
       name  = "POSTGRES_PORT"
-      value = tostring(module.rds.db_port)
+      value = tostring(module.rds[0].db_port)
     },
     {
       name  = "POSTGRES_USER"
@@ -136,11 +140,11 @@ module "ecs" {
     # IMPORTANT: ElastiCache has transit_encryption_enabled=true, so clients must use TLS.
     # Use `rediss://` to enable SSL/TLS in redis-py and Celery broker connections.
     {
-      name  = "REDIS_URL"
+      name = "REDIS_URL"
       # AWS ElastiCache uses certificates signed by Amazon Root CA, so we can validate them properly.
       # Using "required" (redis-py string format) for secure certificate validation.
       # The code will parse this and convert to redis-py's expected format.
-      value = "rediss://:${var.redis_auth_token}@${module.redis.redis_endpoint}:${module.redis.redis_port}?ssl_cert_reqs=required"
+      value = "rediss://:${var.redis_auth_token}@${module.redis[0].redis_endpoint}:${module.redis[0].redis_port}?ssl_cert_reqs=required"
     },
     # Email configuration - Mailtrap sandbox
     {
@@ -181,8 +185,8 @@ module "ecs" {
 module "frontend" {
   source = "../../modules/frontend"
 
-  project_name              = "fastship"
-  environment               = local.environment
+  project_name               = "fastship"
+  environment                = local.environment
   cloudfront_certificate_arn = var.cloudfront_certificate_arn
-  cloudfront_aliases        = var.cloudfront_aliases
+  cloudfront_aliases         = var.cloudfront_aliases
 }

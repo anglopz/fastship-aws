@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "eu-west-1"
 }
 
+variable "services_enabled" {
+  description = "Toggle backend services (ECS, RDS, Redis, ALB). Set false to tear down compute/DB and minimize costs. Frontend (S3+CloudFront), VPC, and ECR remain."
+  type        = bool
+  default     = false
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   type        = string
@@ -73,7 +79,7 @@ variable "backup_retention_period" {
 variable "engine_version" {
   description = "PostgreSQL engine version (available in eu-west-1: 15.10, 15.15, 16.6, 16.11, 17.7, 18.1)"
   type        = string
-  default     = "15.15"  # Latest 15.x version - best security/features for 15.x series
+  default     = "15.15" # Latest 15.x version - best security/features for 15.x series
 }
 
 variable "node_type" {

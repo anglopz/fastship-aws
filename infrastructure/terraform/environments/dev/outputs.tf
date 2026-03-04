@@ -1,11 +1,11 @@
 output "alb_dns_name" {
   description = "Application Load Balancer DNS name"
-  value       = module.networking.alb_dns_name
+  value       = try(module.networking[0].alb_dns_name, null)
 }
 
 output "alb_arn" {
   description = "Application Load Balancer ARN"
-  value       = module.networking.alb_arn
+  value       = try(module.networking[0].alb_arn, null)
 }
 
 output "cloudfront_domain_name" {
@@ -25,37 +25,37 @@ output "s3_bucket_name" {
 
 output "db_endpoint" {
   description = "RDS endpoint"
-  value       = module.rds.db_endpoint
+  value       = try(module.rds[0].db_endpoint, null)
 }
 
 output "redis_endpoint" {
   description = "Redis endpoint"
-  value       = module.redis.redis_endpoint
+  value       = try(module.redis[0].redis_endpoint, null)
 }
 
 output "ecs_cluster_id" {
   description = "ECS cluster ID"
-  value       = module.ecs.cluster_id
+  value       = try(module.ecs[0].cluster_id, null)
 }
 
 output "ecs_cluster_name" {
   description = "ECS cluster name"
-  value       = module.ecs.cluster_name
+  value       = try(module.ecs[0].cluster_name, null)
 }
 
 output "api_service_name" {
   description = "ECS API service name"
-  value       = module.ecs.api_service_name
+  value       = try(module.ecs[0].api_service_name, null)
 }
 
 output "celery_worker_service_name" {
   description = "ECS Celery worker service name"
-  value       = module.ecs.celery_worker_service_name
+  value       = try(module.ecs[0].celery_worker_service_name, null)
 }
 
 output "api_url" {
   description = "API URL"
-  value       = "http://${module.networking.alb_dns_name}"
+  value       = try("http://${module.networking[0].alb_dns_name}", null)
 }
 
 output "ecr_repository_url" {
