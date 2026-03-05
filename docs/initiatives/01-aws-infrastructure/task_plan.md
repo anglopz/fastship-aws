@@ -2,6 +2,7 @@
 
 **Scope:** ECS deployment, Terraform IaC, RDS/Redis provisioning, CI/CD pipeline, HTTPS, monitoring
 **Covers:** Full AWS production deployment with free-tier optimization
+**Current state:** Phases 0–4 complete. Services spun down via `services_enabled = false` for cost optimization (~$1-3/month). Use `spin-up.sh` to restore.
 
 ---
 
